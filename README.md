@@ -10,15 +10,10 @@ python get-pip.py
 ```
 ##### Intall Python packages:
 ```shell
-pip install numpy
-pip install scipy
-pip install matplotlib
-pip install scikit-learn
-```
-If permission denied, using the following command:
-```shell
-sudo pip install <pkg>
-```
+sudo pip install numpy
+sudo pip install scipy
+sudo pip install matplotlib
+sudo pip install scikit-learn
 
 ### Data Resouces
 
