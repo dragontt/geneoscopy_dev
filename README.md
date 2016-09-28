@@ -14,6 +14,7 @@ sudo pip install numpy
 sudo pip install scipy
 sudo pip install matplotlib
 sudo pip install scikit-learn
+```
 
 ### Data Resouces
 
