@@ -20,12 +20,24 @@ sudo pip install scikit-learn
 
 Put normalized expression matrix, quality control file, sample sheet file into 
 ```shell 
-data/<project_name>
+data/<project name>
 ```
 
 ### Run pipeline
 
-This pipeline includes assessment of sample quality, split of training/testing sets, analysis of significantly DE genes in training set, training of ML models, and testing of prediction quality. Input arguments are scripts directory, data resource directory, normalized expression matrix file, quality control table, sample sheet. Make changes of those arguments in scripts/run_pipeline.sh. 
+This pipeline includes assessment of sample quality, split of training/testing sets, analysis of significantly DE genes in training set, training of ML models, and testing of prediction quality. Input arguments in scripts/run_pipeline.sh:
+
+```bash
+DIR_SCRIPTS=<complete path to script directory>
+DIR_DATA=<complete path to data resources>
+NUM_SAMPLES=<number of samples>
+GROUP=<label comparison>
+THLD_PVAL=<threshold of p value>
+THLD_FC=<threshold of fold change>
+NORMALIZED_CHIPDATA=<filename of normalized expression matrix>
+QC_TABLE=<filename of quality control table>
+SAMPLE_SHEET=<filename of sample sheet>
+```
 
 ##### Example:
 ```shell
