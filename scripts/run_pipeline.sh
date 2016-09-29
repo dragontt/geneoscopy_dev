@@ -1,15 +1,15 @@
 #!/usr/bash
 DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
-DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_b_c_d
+DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_a_b_c_d
 
 NUM_SAMPLES=84
-GROUP=N_vs_C
+GROUP=N_vs_P_vs_C
 THLD_PVAL=0.005
 THLD_FC=0
 NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.txt
-QC_TABLE=${DIR_DATA}/QC_table_combined_b_c_d.txt
-SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_b_c_d.txt
-VALID_CHIPS=${DIR_DATA}/valid_chips.txt
+QC_TABLE=${DIR_DATA}/QC_table_combined_a_b_c_d.txt
+SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_a_b_c_d.good_banding.txt
+VALID_CHIPS=${DIR_DATA}/valid_chips.good_banding.txt
 
 if [ $GROUP = 'N_vs_C' ]; then
 	SAMPLE_SHEET=${SAMPLE_SHEET%.txt}.normal_vs_cancer.txt
