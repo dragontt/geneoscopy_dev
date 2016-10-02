@@ -4,19 +4,19 @@ DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_a_b_c_d
 
 NUM_SAMPLES=84
 GROUP=N_vs_C
-THLD_PVAL=0.005
+THLD_PVAL=0.4
 THLD_FC=0
-NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.txt
+NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.nanostring.txt
 QC_TABLE=${DIR_DATA}/QC_table_combined_a_b_c_d.txt
-SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_a_b_c_d.two_group.txt
-VALID_CHIPS=${DIR_DATA}/valid_chips.two_group.txt
+SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_a_b_c_d.two_group_no_benign.txt
+VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benign.txt
 
 # if [ $GROUP = 'N_vs_C' ]; then
 # 	SAMPLE_SHEET=${SAMPLE_SHEET%.txt}.normal_vs_cancer.txt
 # 	VALID_CHIPS=${VALID_CHIPS%.txt}.normal_vs_cancer.txt
 # fi
 
-echo "Num of samples:" $NUM_SAMPLES
+echo "Num of total samples:" $NUM_SAMPLES
 echo "Label groups:" $GROUP
 echo "DE p-value treshold:" $THLD_PVAL
 echo "DE fold change threshold:" $THLD_FC
@@ -39,7 +39,8 @@ NUM_TOP_GENES=$(( $( wc -l ${DIR_DATA}/training/top_de_genes.txt | awk '{print $
 echo $NUM_TOP_GENES "DE genes found"
 echo ""
 
-ML_MODELS=(random_forest svm neural_net grad_boosting)
+# ML_MODELS=(random_forest svm neural_net grad_boosting)
+ML_MODELS=(grad_boosting)
 for ML_MODEL in "${ML_MODELS[@]}"; do
 	echo "###" $ML_MODEL "###"
 	echo "Training models ... "
