@@ -152,8 +152,10 @@ def main(argv):
 		print "Optimal param: " + str(optimal_param)
 
 		# train the model
-		clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0, verbose=False)
 		clf.fit(expr_tr, label_tr)
+		label_pred = clf.predict(expr_tr)
+		accuracy_pred = len([label_pred[i] for i in range(len(label_pred)) if (label_pred[i] == label_tr[i])]) / float(len(label_pred))
+		print "Training accuracy:", str(accuracy_pred)
 		if parsed.output_directory != None:
 			joblib.dump(clf, parsed.output_directory + 'grad_boosting_model.pkl')
 

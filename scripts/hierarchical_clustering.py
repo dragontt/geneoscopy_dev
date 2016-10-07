@@ -166,8 +166,8 @@ def heatmap(x, row_header, column_header, row_method,
     axm.set_yticks([])
 
     # Add text
-    ticks_size_row = 12
-    ticks_size_col = 12
+    ticks_size_row = 10
+    ticks_size_col = 10
     new_row_header=[]
     new_column_header=[]
     for i in range(x.shape[0]):

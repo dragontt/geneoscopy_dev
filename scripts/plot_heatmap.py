@@ -4,7 +4,7 @@ import argparse
 from hierarchical_clustering import heatmap
 import matplotlib.lines as plin
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+# from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 import numpy as np
 from scipy.stats.mstats import gmean
