@@ -130,11 +130,11 @@ def main(argv):
 		# cross validation
 		n_folds = 10
 		(expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		max_depth_range = range(2,6)
+		param_range = [2,3,4,5,6,7,8,9,10] # choose the param to tune
 		accuracy_lst = []
-		for depth in max_depth_range:
-			print "Running cross valdiation ... depth = " + str(depth)
-			clf = GradientBoostingClassifier(loss='deviance', learning_rate=0.01, n_estimators=1000, max_depth=depth, verbose=False)
+		for p in param_range:
+			print "Running cross valdiation ... p = " + str(p)
+			clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
 			accuracy_sum = 0
 			for i in range(n_folds):
 				# internal training and testing
@@ -147,10 +147,12 @@ def main(argv):
 				accuracy_pred = len([label_pred[i] for i in range(len(label_pred)) if (label_pred[i] == label_tr1[i])]) / float(len(label_pred))
 				accuracy_sum += accuracy_pred
 			accuracy_lst.append(accuracy_sum/float(n_folds))
-		optimal_max_depth = max_depth_range[np.argmax(accuracy_lst)]
+			print "   Average accuracy: " + str(accuracy_sum/float(n_folds))
+		optimal_param = param_range[np.argmax(accuracy_lst)]
+		print "Optimal param: " + str(optimal_param)
 
 		# train the model
-		clf = GradientBoostingClassifier(loss='deviance', learning_rate=0.01, n_estimators=1000, max_depth=optimal_max_depth, verbose=False)
+		clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0, verbose=False)
 		clf.fit(expr_tr, label_tr)
 		if parsed.output_directory != None:
 			joblib.dump(clf, parsed.output_directory + 'grad_boosting_model.pkl')
