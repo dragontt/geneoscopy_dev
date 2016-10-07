@@ -4,9 +4,10 @@ import sys
 import os
 import argparse
 import shutil
-import numpy
+import numpy as np
 import time
 from sklearn.externals import joblib
+import random
 
 learning_algorithms = ['random_forest', 'svm', 'neural_net', 'grad_boosting']
 
@@ -19,12 +20,28 @@ def parse_args(argv):
 	return parsed
 
 def parse_data(filename, label_col, data_col_start, data_col_end=10000):
-	data = numpy.loadtxt(filename, dtype=str, delimiter='\t')
+	data = np.loadtxt(filename, dtype=str, delimiter='\t')
 	gene_id = data[0, data_col_start:data_col_end]
 	sample_id = data[1:, 0]
-	expr = numpy.array(data[1:, data_col_start:data_col_end], dtype=numpy.float32)
+	expr = np.array(data[1:, data_col_start:data_col_end], dtype=np.float32)
 	label = data[1:, label_col]
 	return [gene_id, sample_id, expr, label]
+
+def generate_cross_validation(expr_tr, label_tr, n_folds=10):
+	# make sure at least one Normal, at least one CRC in each fold
+	indx_N = np.where(label_tr == "N")[0]
+	indx_C = np.setdiff1d(range(len(label_tr)), indx_N)
+	random.shuffle(indx_N)
+	random.shuffle(indx_C)
+	indx_N_rand_chunks = np.array_split(indx_N, n_folds)
+	indx_C_rand_chunks = np.array_split(indx_C, n_folds)
+	expr_tr_rand_chuks = []
+	label_tr_rand_chuks = []
+	for i in range(len(indx_N_rand_chunks)):
+		indx_combined = list(indx_N_rand_chunks[i]) + list(indx_C_rand_chunks[i])
+		expr_tr_rand_chuks.append(expr_tr[indx_combined,:])
+		label_tr_rand_chuks.append(label_tr[indx_combined])
+	return (np.array(expr_tr_rand_chuks), np.array(label_tr_rand_chuks))
 
 def main(argv):
 	# parse data
@@ -37,8 +54,8 @@ def main(argv):
 	
 	[gene_id, sample_id, expr_tr, label_tr] = parse_data(parsed.input_filename, 1, 2)
 	
-	label_unique= numpy.unique(label_tr)
-	label_count = numpy.array([len(numpy.where(label_tr == l)[0]) for l in label_unique])
+	label_unique= np.unique(label_tr)
+	label_count = np.array([len(np.where(label_tr == l)[0]) for l in label_unique])
 
 	print "Training set dimension:", expr_tr.shape[0], "samples x", expr_tr.shape[1], "genes"
 	print "CRC labels:", label_unique, ", counts:", label_count
@@ -110,8 +127,30 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 
+		# cross validation
+		n_folds = 10
+		(expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
+		max_depth_range = range(2,6)
+		accuracy_lst = []
+		for depth in max_depth_range:
+			print "Running cross valdiation ... depth = " + str(depth)
+			clf = GradientBoostingClassifier(loss='deviance', learning_rate=0.01, n_estimators=1000, max_depth=depth, verbose=False)
+			accuracy_sum = 0
+			for i in range(n_folds):
+				# internal training and testing
+				expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
+				label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
+				expr_tr1 = expr_tr_cv[i]
+				label_tr1 = label_tr_cv[i]
+				clf.fit(expr_tr0, label_tr0)
+				label_pred = clf.predict(expr_tr1)
+				accuracy_pred = len([label_pred[i] for i in range(len(label_pred)) if (label_pred[i] == label_tr1[i])]) / float(len(label_pred))
+				accuracy_sum += accuracy_pred
+			accuracy_lst.append(accuracy_sum/float(n_folds))
+		optimal_max_depth = max_depth_range[np.argmax(accuracy_lst)]
+
 		# train the model
-		clf = GradientBoostingClassifier(loss='deviance', learning_rate=0.01, n_estimators=1000, max_depth=3, verbose=False)
+		clf = GradientBoostingClassifier(loss='deviance', learning_rate=0.01, n_estimators=1000, max_depth=optimal_max_depth, verbose=False)
 		clf.fit(expr_tr, label_tr)
 		if parsed.output_directory != None:
 			joblib.dump(clf, parsed.output_directory + 'grad_boosting_model.pkl')
