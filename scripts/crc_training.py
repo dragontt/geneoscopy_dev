@@ -57,7 +57,7 @@ def main(argv):
 	label_unique= np.unique(label_tr)
 	label_count = np.array([len(np.where(label_tr == l)[0]) for l in label_unique])
 
-	print "Training set dimension:", expr_tr.shape[0], "samples x", expr_tr.shape[1], "genes"
+	print "Training set dimension:", expr_tr.shape[0], "samples x", expr_tr.shape[1], "features"
 	print "CRC labels:", label_unique, ", counts:", label_count
 
 	time_start = time.clock()
