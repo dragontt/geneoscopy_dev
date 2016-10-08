@@ -34,7 +34,8 @@ def main(argv):
 	print "Validation set dimension:", expr_te.shape[0], "samples x", expr_te.shape[1], "genes"
 	print "CRC labels:", label_unique, ", counts:", label_count 
 
-	# learning algorithms
+
+	##### Random Forest #####
 	if parsed.learning_algorithm.lower() ==	'random_forest':
 		from sklearn.ensemble import RandomForestClassifier
 		
@@ -50,6 +51,8 @@ def main(argv):
 		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
 		print "Prediction accuracy:", accuracy_predicted
 
+
+	##### SVM #####
 	elif parsed.learning_algorithm.lower() == 'svm':
 		from sklearn.svm import SVC
 
@@ -65,6 +68,8 @@ def main(argv):
 		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
 		print "Prediction accuracy:", accuracy_predicted
 
+
+	##### Neural Network #####
 	elif parsed.learning_algorithm.lower() == 'neural_net':
 		from sklearn.neural_network import BernoulliRBM
 
@@ -76,8 +81,28 @@ def main(argv):
 		# print message 
 		print "Prediction accuracy:", accuracy_predicted
 
+
+	##### Gradient Boosting #####
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
+		
+		# predict on validation set
+		clf = joblib.load(parsed.model_filename)
+		label_predicted = clf.predict(expr_te)
+		probability_predicted = clf.predict_proba(expr_te)
+		accuracy_predicted = clf.score(expr_te, label_te)
+		summary = numpy.hstack((sample_id[numpy.newaxis].T, label_te[numpy.newaxis].T, label_predicted[numpy.newaxis].T, probability_predicted))
+
+		# print messages
+		print "sample_id true_label predict_label", clf.classes_
+		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
+		print "Prediction accuracy:", accuracy_predicted
+
+
+	##### Gaussian Process #####
+	elif parsed.learning_algorithm.lower() == 'gauss_process':
+		from sklearn.gaussian_process import GaussianProcessClassifier
+		from sklearn.gaussian_process.kernels import RBF
 		
 		# predict on validation set
 		clf = joblib.load(parsed.model_filename)

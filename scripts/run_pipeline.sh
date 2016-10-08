@@ -36,13 +36,13 @@ python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}
 
 echo "Analyzing DE genes ... "
 Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP $THLD_PVAL $THLD_FC ${DIR_DATA}/training/top_de_genes.txt
-# python ${DIR_SCRIPTS}/de_analysis_sd.py ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt ${DIR_DATA}/training/top_de_genes_sd.txt
+# python ${DIR_SCRIPTS}/de_analysis_sd.py ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt ${DIR_DATA}/training/top_de_genes.txt
 NUM_TOP_GENES=$(( $( wc -l ${DIR_DATA}/training/top_de_genes.txt | awk '{print $1}') - 1 ))
 echo $NUM_TOP_GENES "DE genes found"
 echo ""
 
-# ML_MODELS=(random_forest svm neural_net grad_boosting)
-ML_MODELS=(grad_boosting)
+# ML_MODELS=(random_forest svm neural_net grad_boosting gauss_process)
+ML_MODELS=(gauss_process)
 for ML_MODEL in "${ML_MODELS[@]}"; do
 	echo "###" $ML_MODEL "###"
 	

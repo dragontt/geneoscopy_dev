@@ -62,7 +62,8 @@ def main(argv):
 
 	time_start = time.clock()
 
-	# learning algorithms
+
+	##### Random Forest #####
 	if parsed.learning_algorithm.lower() ==	'random_forest':
 		from sklearn.ensemble import RandomForestClassifier
 		
@@ -70,7 +71,7 @@ def main(argv):
 		clf = RandomForestClassifier(n_estimators=1000, n_jobs=1, criterion="entropy", oob_score=True, class_weight=None, verbose=False)
 		clf.fit(expr_tr, label_tr)
 		if parsed.output_directory != None:
-			joblib.dump(clf, parsed.output_directory + 'random_forest_model.pkl')
+			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
 		
 		time_end = time.clock()
 		time_elapsed = time_end - time_start
@@ -85,11 +86,8 @@ def main(argv):
 		print "Training time elapsed:", time_elapsed, "sec"
 		print "Out-of-bag accuracy:", clf.oob_score_
 
-		# print "Most important genes:"
-		# print "ranking importance_score gene_id"
-		# for i in range(num_most_important_gene):
-		# 	print i+1, gene_score[gene_index[i]], gene_id[gene_index[i]]
 
+	##### SVM #####
 	elif parsed.learning_algorithm.lower() == 'svm':
 		from sklearn.svm import SVC
 
@@ -99,12 +97,8 @@ def main(argv):
 		if parsed.output_directory != None:
 			joblib.dump(clf, parsed.output_directory + 'svm_model.pkl')
 
-		time_end = time.clock()
-		time_elapsed = time_end - time_start
 
-		# print messages
-		print "Training time elapsed:", time_elapsed, "sec"
-
+	##### Neural Network #####
 	elif parsed.learning_algorithm.lower() == 'neural_net':
 		from sklearn.linear_model import LogisticRegression
 		from sklearn.neural_network import BernoulliRBM
@@ -116,14 +110,10 @@ def main(argv):
 		clf = Pipeline(steps=[('rmb', rbm), ('logistic', logistic)])
 		clf.fit(expr_tr, label_tr)
 		if parsed.output_directory != None:
-			joblib.dump(clf, parsed.output_directory + 'neural_net_model.pkl')
+			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
 
-		time_end = time.clock()
-		time_elapsed = time_end - time_start
 
-		# print messages
-		print "Training time elapsed:", time_elapsed, "sec"
-
+	##### Gradient Boosting #####		
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 
@@ -133,7 +123,7 @@ def main(argv):
 		param_range = [2,3,4,5,6,7,8,9,10] # choose the param to tune
 		accuracy_lst = []
 		for p in param_range:
-			print "Running cross valdiation ... p = " + str(p)
+			print "Running cross valdiation ... p =", p
 			clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
 			accuracy_sum = 0
 			for i in range(n_folds):
@@ -147,37 +137,43 @@ def main(argv):
 				accuracy_pred = len([label_pred[i] for i in range(len(label_pred)) if (label_pred[i] == label_tr1[i])]) / float(len(label_pred))
 				accuracy_sum += accuracy_pred
 			accuracy_lst.append(accuracy_sum/float(n_folds))
-			print "   Average accuracy: " + str(accuracy_sum/float(n_folds))
+			print "   Average accuracy:", accuracy_sum/float(n_folds)
 		optimal_param = param_range[np.argmax(accuracy_lst)]
-		print "Optimal param: " + str(optimal_param)
+		print "Optimal param:", optimal_param
 
 		# train the model
+		clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		accuracy_pred = len([label_pred[i] for i in range(len(label_pred)) if (label_pred[i] == label_tr[i])]) / float(len(label_pred))
-		print "Training accuracy:", str(accuracy_pred)
+		print "Training accuracy:", clf.score(expr_tr, label_tr)
 		if parsed.output_directory != None:
-			joblib.dump(clf, parsed.output_directory + 'grad_boosting_model.pkl')
+			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
 
-		time_end = time.clock()
-		time_elapsed = time_end - time_start
+	##### Gaussian Process #####
+	elif parsed.learning_algorithm.lower() == 'gauss_process':
+		from sklearn.gaussian_process import GaussianProcessClassifier
+		from sklearn.gaussian_process.kernels import RBF
 
-		# sort genes by importance
-		num_most_important_gene = 25
-		gene_score = clf.feature_importances_
-		gene_index = gene_score.argsort()[-num_most_important_gene:][::-1]
+		## cross validation
+		print "No cross validation yet."
 
-		# print messages 
-		print "Training time elapsed:", time_elapsed, "sec"
-		print "Training deviance:", clf.train_score_[-1]
-
-		# print "Most important genes:"
-		# print "ranking importance_score gene_id"
-		# for i in range(num_most_important_gene):
-		# 	print i+1, gene_score[gene_index[i]], gene_id[gene_index[i]]
+		# train the model
+		clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=1.0), optimizer="fmin_l_bfgs_b")
+		clf.fit(expr_tr, label_tr)
+		label_pred = clf.predict(expr_tr)
+		print "Training accuracy:", clf.score(expr_tr, label_tr)
+		if parsed.output_directory != None:
+			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
 
 	else:
 		sys.exit('Improper learning algorithm option given.')
+
+	# print timing messages
+	time_end = time.clock()
+	time_elapsed = time_end - time_start
+	print "Training time elapsed:", time_elapsed, "sec"
+
 
 if __name__ == "__main__":
     main(sys.argv)
