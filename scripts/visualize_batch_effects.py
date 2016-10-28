@@ -2,14 +2,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-dir_data = "/Users/KANG/geneoscopy_dev/data/20160903_project_combined_2283_a_b_c_d/"
-file_expr = dir_data + "chipdata_geneset_x_valid_chips.expression_console.txt"
-file_sample = dir_data + "sample_sheet_combined_a_b_c_d.txt"
+dir_data = "/Users/KANG/geneoscopy_dev/data/20161014_project_combined_2283_abcde/"
+file_expr = dir_data + "chipdata_geneset_x_valid_chips.txt"
+file_sample = dir_data + "sample_sheet_combined_abcde.two_group_no_benign.txt"
 
-bs = ["1", "2", "3", "4"]
-labels = ["C", "N", "P"]
+bs = ["1", "2", "3", "4", "5"]
+labels = ["C", "N"]
+colors_arr = ["r", "g"]
 # cg_genes = {'NDRG4':'TC16000503.hg.1', 'BMP3':'TC04000449.hg.1', 'KRAS':'TC12001314.hg.1'}
-cg_genes = {'TC20000068.hg.1' : 'TC20000068.hg.1'}
+cg_genes = {'TC05000161' : 'TC05000161.hg.1'}
 
 expr = np.loadtxt(file_expr, dtype=str, delimiter='\t')
 meta = np.loadtxt(file_sample, dtype=str, usecols=[1,2,3], skiprows=1, delimiter='\t')
@@ -42,12 +43,21 @@ for g in cg_genes.keys():
 			if batch[k][i] in expr[0,:]:
 				sample_indx = np.where(expr[0,:] == batch[k][i])[0][0]
 				gene_expr[g][len(gene_expr[g])-1].append(float(expr[gene_indx[g], sample_indx]))
+## add all samples expressions for each batch
+all_expr = []
+for j in range(len(labels)):
+	all_expr.append([])
+for i in range(len(bs)):
+	for j in range(len(labels)):
+		all_expr[j] += gene_expr[g][i*len(labels)+j]
+gene_expr[g] += all_expr
 
 ## plot boxplot
+bs.append("all")
 locs = []
 for i in range(len(bs)):
 	locs += [x+i*(len(labels)+1) for x in range(len(labels))]
-colors = ["r", "g", "b"]*len(bs)
+colors = colors_arr*(len(bs))
 
 for g in cg_genes.keys():
 	plt.figure()

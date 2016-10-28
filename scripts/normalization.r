@@ -1,12 +1,12 @@
 ### Usage ###
-# Rscript rma normalization.r <dir_.cel_files> <normalized_expr_file>
+# Rscript normalization.r rma <dir_.cel_files> <normalized_expr_file>
 
 ## download and load libraries
-source("http://bioconductor.org/biocLite.R")
-if (!require("oligo")) try(biocLite("oligo"));
-if (!require("limma")) try(biocLite("limma"));
-if (!require("gcrma")) try(biocLite("gcrma"));
-if (!require("hta20sttranscriptcluster.db")) try(biocLite("hta20sttranscriptcluster.db"));
+# source("http://bioconductor.org/biocLite.R")
+# if (!require("oligo")) try(biocLite("oligo"));
+# if (!require("limma")) try(biocLite("limma"));
+# if (!require("gcrma")) try(biocLite("gcrma"));
+# if (!require("hta20sttranscriptcluster.db")) try(biocLite("hta20sttranscriptcluster.db"));
 
 ## File IO
 args <- commandArgs(trailingOnly = TRUE)
@@ -25,7 +25,7 @@ if (norm_method == "rma") {
 	affyRaw <- read.celfiles(celFiles)
 	eset <- rma(affyRaw, target="core")
 	# eset <- rma(affyRaw, target="probeset")
-	write.exprs(eset,file=file_rma_expr)
+	write.exprs(eset,file=file_expr)
 
 	## add gene annotation
 	# my_frame <- data.frame(exprs(eset))
@@ -40,7 +40,7 @@ if (norm_method == "rma") {
 	# affyRaw <- read.celfiles(celFiles)
 	affyRaw <- ReadAffy()
 	eset <- gcrma(affyRaw)
-	write.exprs(eset,file=file_gcrma_expr)
+	write.exprs(eset,file=file_expr)
 } else {
 	cat("No normalization method!", "\n")
 }

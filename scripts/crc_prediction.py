@@ -31,7 +31,7 @@ def main(argv):
 	label_unique= numpy.unique(label_te)
 	label_count = numpy.array([len(numpy.where(label_te == l)[0]) for l in label_unique])
 
-	print "Validation set dimension:", expr_te.shape[0], "samples x", expr_te.shape[1], "genes"
+	print "Validation set dimension:", expr_te.shape[0], "samples x", expr_te.shape[1], "features"
 	print "CRC labels:", label_unique, ", counts:", label_count 
 
 
