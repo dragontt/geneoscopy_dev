@@ -71,7 +71,7 @@ for ML_MODEL in "${ML_MODELS[@]}"; do
 	rm -rf $ML_MODEL
 	python ${DIR_SCRIPTS}/crc_training.py -i ${DIR_DATA}/training/training_set.txt -f ${DIR_DATA}/training/training_set_full.txt -a $ML_MODEL -p $CRC_PREDICTORS -o ${DIR_DATA}/training/${ML_MODEL}
 
-	# echo "Testing prediction ... "
-	# python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -a $ML_MODEL -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl
-	# echo ""
+	echo "Testing prediction ... "
+	python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -f ${DIR_DATA}/testing/testing_set_full.txt -a $ML_MODEL -p $CRC_PREDICTORS -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl
+	echo ""
 done

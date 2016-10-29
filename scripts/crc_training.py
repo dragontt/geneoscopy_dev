@@ -63,8 +63,8 @@ def get_predictor_expr(filename, expr, gene_id):
 	return (tc_predictors, expr[:, tc_predictors_indx])
 
 
-def parse_predictor_median_sd(expr):
-	return (np.median(expr, axis=0), np.median(expr, axis=0))
+def parse_predictor_stats(expr):
+	return (np.median(expr, axis=0), np.median(expr, axis=0), np.percentile(expr, 75, axis=0))
 
 
 def main(argv):
@@ -177,17 +177,21 @@ def main(argv):
 			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
 
 		## calculate score for ML prediction
-		score_ml = clf.predict_proba(expr_tr)[:,0]
+		score_ml = .8*clf.predict_proba(expr_tr)[:,0]
 		## add weight to outlier predictors
 		score_predictors = np.zeros(len(sample_id))
 		(tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_tr_full, gene_id_full)
 		print "Predictors added:", tc_predictors
-		weight_predictors = .2/len(tc_predictors)
-		(tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd) = parse_predictor_median_sd(tc_predictors_expr)
-		thlds = tc_predictors_normal_expr_median + 1.5*tc_predictors_normal_expr_sd
+		weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
+		(tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd, tc_predictors_normal_expr_third_pctil) = parse_predictor_stats(tc_predictors_expr)
+		# thlds = tc_predictors_normal_expr_median + 2*tc_predictors_normal_expr_sd
+		thlds = tc_predictors_normal_expr_third_pctil
 		for j in range(len(tc_predictors)):
-			for indx in np.where(tc_predictors_expr[:,j] > thlds[j])[0]:
-				score_predictors[indx] += weight_predictors[j]
+			print tc_predictors[j], tc_predictors_normal_expr_median[j], tc_predictors_normal_expr_sd[j], tc_predictors_normal_expr_third_pctil[j]
+		for j in range(len(tc_predictors)):
+			indx = np.where(tc_predictors_expr[:,j] > thlds[j])[0]
+			for i in indx:
+				score_predictors[i] += weight_predictors[j]
 		## final prediction
 		print "sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"
 		score_final = []

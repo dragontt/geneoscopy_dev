@@ -1,7 +1,7 @@
 #/usr/bin/python
 import sys
 import argparse
-import numpy
+import numpy as np
 from sklearn.externals import joblib
 
 learning_algorithms = ['random_forest', 'svm', 'neural_net', 'grad_boosting']
@@ -9,26 +9,51 @@ learning_algorithms = ['random_forest', 'svm', 'neural_net', 'grad_boosting']
 def parse_args(argv):
 	parser = argparse.ArgumentParser(description="")
 	parser.add_argument('-a', '--learning_algorithm', dest='learning_algorithm', default='random_forest', help='options: %s' % learning_algorithms)
-	parser.add_argument('-i', '--input_filename', dest='input_filename')
+	parser.add_argument('-i', '--input_expr', dest='input_expr')
+	parser.add_argument('-f', '--input_expr_full', dest='input_expr_full')
+	parser.add_argument('-p', '--outlier_predictors', dest='outlier_predictors')
 	parser.add_argument('-m', '--model_filename', dest='model_filename')
 	parsed = parser.parse_args(argv[1:])
 	return parsed
 
+
 def parse_data(filename, label_col, data_col_start, data_col_end=10000):
-	data = numpy.loadtxt(filename, dtype=str, delimiter='\t')
+	data = np.loadtxt(filename, dtype=str, delimiter='\t')
 	gene_id = data[0, data_col_start:data_col_end]
 	sample_id = data[1:, 0]
-	expr = numpy.array(data[1:, data_col_start:data_col_end], dtype=numpy.float32)
+	expr = np.array(data[1:, data_col_start:data_col_end], dtype=np.float32)
 	label = data[1:, label_col]
 	return [gene_id, sample_id, expr, label]
+
+def get_predictor_expr(filename, expr, gene_id):
+	f = open(filename, "r")
+	lines = f.readlines()
+	tc_predictors_indx = []
+	tc_predictors = []
+	for line in lines:
+		tmp_arr = line.strip().split("\t")
+		if len(tmp_arr) > 1:
+			for tmp_tc in tmp_arr[1].split(","):
+				if tmp_tc in gene_id:
+					tmp_indx = np.where(gene_id == tmp_tc)[0][0]
+					tc_predictors_indx.append(tmp_indx)
+					tc_predictors.append(tmp_tc)
+	return (tc_predictors, expr[:, tc_predictors_indx])
+
+
+def parse_predictor_stats(expr):
+	return (np.median(expr, axis=0), np.median(expr, axis=0), np.percentile(expr, 75, axis=0))
+
 
 def main(argv):
 	# parse data
 	parsed = parse_args(argv)
-	[gene_id, sample_id, expr_te, label_te] = parse_data(parsed.input_filename, 1, 2)
 
-	label_unique= numpy.unique(label_te)
-	label_count = numpy.array([len(numpy.where(label_te == l)[0]) for l in label_unique])
+	[gene_id, sample_id, expr_te, label_te] = parse_data(parsed.input_expr, 1, 2)
+	[gene_id_full, foo, expr_te_full, foo] = parse_data(parsed.input_expr_full, 1, 2)
+
+	label_unique= np.unique(label_te)
+	label_count = np.array([len(np.where(label_te == l)[0]) for l in label_unique])
 
 	print "Validation set dimension:", expr_te.shape[0], "samples x", expr_te.shape[1], "features"
 	print "CRC labels:", label_unique, ", counts:", label_count 
@@ -43,7 +68,7 @@ def main(argv):
 		label_predicted = clf.predict(expr_te)
 		probability_predicted = clf.predict_proba(expr_te)
 		accuracy_predicted = clf.score(expr_te, label_te)
-		summary = numpy.hstack((sample_id[numpy.newaxis].T, label_te[numpy.newaxis].T, label_predicted[numpy.newaxis].T, probability_predicted))
+		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
 		# print messages
 		print "sample_id true_label predict_label", clf.classes_
@@ -60,7 +85,7 @@ def main(argv):
 		label_predicted = clf.predict(expr_te)
 		probability_predicted = clf.predict_proba(expr_te)
 		accuracy_predicted = clf.score(expr_te, label_te)
-		summary = numpy.hstack((sample_id[numpy.newaxis].T, label_te[numpy.newaxis].T, label_predicted[numpy.newaxis].T, probability_predicted))
+		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
 		# print message 
 		print "sample_id true_label predict_label", clf.classes_
@@ -90,12 +115,36 @@ def main(argv):
 		label_predicted = clf.predict(expr_te)
 		probability_predicted = clf.predict_proba(expr_te)
 		accuracy_predicted = clf.score(expr_te, label_te)
-		summary = numpy.hstack((sample_id[numpy.newaxis].T, label_te[numpy.newaxis].T, label_predicted[numpy.newaxis].T, probability_predicted))
+		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
-		# print messages
-		print "sample_id true_label predict_label", clf.classes_
-		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
-		print "Prediction accuracy:", accuracy_predicted
+		## calculate score for ML prediction
+		score_ml = .8*clf.predict_proba(expr_te)[:,0]
+		## add weight to outlier predictors
+		score_predictors = np.zeros(len(sample_id))
+		(tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_te_full, gene_id_full)
+		print "Predictors added:", tc_predictors
+		weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
+		(tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd, tc_predictors_normal_expr_third_pctil) = parse_predictor_stats(tc_predictors_expr)
+		# thlds = tc_predictors_normal_expr_median + 2*tc_predictors_normal_expr_sd
+		thlds = tc_predictors_normal_expr_third_pctil
+		for j in range(len(tc_predictors)):
+			indx = np.where(tc_predictors_expr[:,j] > thlds[j])[0]
+			for i in indx:
+				score_predictors[i] += weight_predictors[j]
+		## final prediction
+		print "sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"
+		score_final = []
+		for i in range(len(sample_id)):
+			score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
+			score_final.append(score)
+			predicted_label = "C" if score > .5 else "N"
+			print sample_id[i], label_te[i], predicted_label, score_ml[i], score_predictors[i], score, score != score_ml[i]
+
+		##print messages
+		# print "sample_id true_label predict_label", clf.classes_
+		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
+		# print "Prediction accuracy:", accuracy_predicted
+
 
 
 	##### Gaussian Process #####
@@ -108,7 +157,7 @@ def main(argv):
 		label_predicted = clf.predict(expr_te)
 		probability_predicted = clf.predict_proba(expr_te)
 		accuracy_predicted = clf.score(expr_te, label_te)
-		summary = numpy.hstack((sample_id[numpy.newaxis].T, label_te[numpy.newaxis].T, label_predicted[numpy.newaxis].T, probability_predicted))
+		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
 		# print messages
 		print "sample_id true_label predict_label", clf.classes_
