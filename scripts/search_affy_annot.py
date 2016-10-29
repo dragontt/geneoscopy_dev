@@ -12,8 +12,13 @@ genes = np.loadtxt(file_gene_list, dtype=str)
 for i in range(len(genes)):
 	genes[i,0] = genes[i,0].split(".")[0]
 """
+"""
 file_gene_list = proj_dir + "external_data/Genecards_colon_cancer/GeneCards_genes.txt"
 file_gene_out = proj_dir + "external_data/Genecards_colon_cancer/GeneCards_genes_annotated.txt"
+genes = np.loadtxt(file_gene_list, dtype=str)[np.newaxis].T
+"""
+file_gene_list = proj_dir + "external_data/CIViC/civic_genes_TCs.txt"
+file_gene_out = proj_dir + "external_data/CIViC/civic_genes_TCs.txt"
 genes = np.loadtxt(file_gene_list, dtype=str)[np.newaxis].T
 
 tc = []

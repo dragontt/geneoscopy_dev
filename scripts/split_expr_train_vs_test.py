@@ -26,9 +26,11 @@ def main(argv):
 	expr = expr[:,1:]
 
 	np.savetxt(parsed.train_expr, np.hstack((rownames, expr[:,indx_tr])), fmt="%s", delimiter="\t")
-	np.savetxt(parsed.train_valid_chips, valid_chips[indx_tr,:], fmt="%s", delimiter="\t")
+	if parsed.train_valid_chips != None:
+		np.savetxt(parsed.train_valid_chips, valid_chips[indx_tr,:], fmt="%s", delimiter="\t")
 	np.savetxt(parsed.test_expr, np.hstack((rownames, expr[:,indx_te])), fmt="%s", delimiter="\t")
-	np.savetxt(parsed.test_valid_chips, valid_chips[indx_te,:], fmt="%s", delimiter="\t")
+	if parsed.test_valid_chips != None:
+		np.savetxt(parsed.test_valid_chips, valid_chips[indx_te,:], fmt="%s", delimiter="\t")
 
 if __name__ == "__main__":
     main(sys.argv)

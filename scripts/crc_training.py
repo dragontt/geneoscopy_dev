@@ -1,5 +1,4 @@
 #/usr/bin/python
-
 import sys
 import os
 import argparse
@@ -12,20 +11,24 @@ import random
 learning_algorithms = ['random_forest', 'svm', 'neural_net', 'grad_boosting']
 
 def parse_args(argv):
-	parser = argparse.ArgumentParser(description='Train Random Forest model on EE microarray data.')
+	parser = argparse.ArgumentParser(description="")
 	parser.add_argument('-a', '--learning_algorithm', dest='learning_algorithm', default='random_forest', help='options: %s' % learning_algorithms)
-	parser.add_argument('-i', '--input_filename', dest='input_filename')
+	parser.add_argument('-i', '--input_expr', dest='input_expr')
+	parser.add_argument('-f', '--input_expr_full', dest='input_expr_full')
+	parser.add_argument('-p', '--outlier_predictors', dest='outlier_predictors')
 	parser.add_argument('-o', '--output_directory', dest='output_directory')
 	parsed = parser.parse_args(argv[1:])
 	return parsed
 
-def parse_data(filename, label_col, data_col_start, data_col_end=10000):
+
+def parse_data(filename, label_col, data_col_start):
 	data = np.loadtxt(filename, dtype=str, delimiter='\t')
-	gene_id = data[0, data_col_start:data_col_end]
+	gene_id = data[0, data_col_start:]
 	sample_id = data[1:, 0]
-	expr = np.array(data[1:, data_col_start:data_col_end], dtype=np.float32)
+	expr = np.array(data[1:, data_col_start:], dtype=np.float32)
 	label = data[1:, label_col]
 	return [gene_id, sample_id, expr, label]
+
 
 def generate_cross_validation(expr_tr, label_tr, n_folds=10):
 	# make sure at least one Normal, at least one CRC in each fold
@@ -43,6 +46,27 @@ def generate_cross_validation(expr_tr, label_tr, n_folds=10):
 		label_tr_rand_chuks.append(label_tr[indx_combined])
 	return (np.array(expr_tr_rand_chuks), np.array(label_tr_rand_chuks))
 
+
+def get_predictor_expr(filename, expr, gene_id):
+	f = open(filename, "r")
+	lines = f.readlines()
+	tc_predictors_indx = []
+	tc_predictors = []
+	for line in lines:
+		tmp_arr = line.strip().split("\t")
+		if len(tmp_arr) > 1:
+			for tmp_tc in tmp_arr[1].split(","):
+				if tmp_tc in gene_id:
+					tmp_indx = np.where(gene_id == tmp_tc)[0][0]
+					tc_predictors_indx.append(tmp_indx)
+					tc_predictors.append(tmp_tc)
+	return (tc_predictors, expr[:, tc_predictors_indx])
+
+
+def parse_predictor_median_sd(expr):
+	return (np.median(expr, axis=0), np.median(expr, axis=0))
+
+
 def main(argv):
 	# parse data
 	parsed = parse_args(argv)
@@ -52,7 +76,8 @@ def main(argv):
 			shutil.rmtree(parsed.output_directory)
 		os.makedirs(parsed.output_directory)
 	
-	[gene_id, sample_id, expr_tr, label_tr] = parse_data(parsed.input_filename, 1, 2)
+	[gene_id, sample_id, expr_tr, label_tr] = parse_data(parsed.input_expr, 1, 2)
+	[gene_id_full, foo, expr_tr_full, foo] = parse_data(parsed.input_expr_full, 1, 2)
 	
 	label_unique= np.unique(label_tr)
 	label_count = np.array([len(np.where(label_tr == l)[0]) for l in label_unique])
@@ -150,6 +175,28 @@ def main(argv):
 		print "Training accuracy:", clf.score(expr_tr, label_tr)
 		if parsed.output_directory != None:
 			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
+
+		## calculate score for ML prediction
+		score_ml = clf.predict_proba(expr_tr)[:,0]
+		## add weight to outlier predictors
+		score_predictors = np.zeros(len(sample_id))
+		(tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_tr_full, gene_id_full)
+		print "Predictors added:", tc_predictors
+		weight_predictors = .2/len(tc_predictors)
+		(tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd) = parse_predictor_median_sd(tc_predictors_expr)
+		thlds = tc_predictors_normal_expr_median + 1.5*tc_predictors_normal_expr_sd
+		for j in range(len(tc_predictors)):
+			for indx in np.where(tc_predictors_expr[:,j] > thlds[j])[0]:
+				score_predictors[indx] += weight_predictors[j]
+		## final prediction
+		print "sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"
+		score_final = []
+		for i in range(len(sample_id)):
+			score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
+			score_final.append(score)
+			predicted_label = "C" if score > .5 else "N"
+			print sample_id[i], label_tr[i], predicted_label, score_ml[i], score_predictors[i], score, score != score_ml[i]
+		
 
 	##### Gaussian Process #####
 	elif parsed.learning_algorithm.lower() == 'gauss_process':

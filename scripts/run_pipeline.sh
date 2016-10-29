@@ -16,12 +16,14 @@ NUM_SAMPLES=107
 GROUP=N_vs_C
 THLD_PVAL=0.4
 THLD_FC=0
-DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcd_e
+DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcde
 NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.nanostring.txt
+NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
 QC_TABLE=${DIR_DATA}/QC_table_combined_abcde.txt
 SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcde.two_group_no_benign.txt
 PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
 VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benign.txt
+CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_genes_TCs.txt
 
 
 echo "Num of total samples:" $NUM_SAMPLES
@@ -35,11 +37,13 @@ echo ""
 
 echo "Running quality control ... "
 python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
+python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA_FULL -q $QC_TABLE -s $SAMPLE_SHEET -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
 
 echo "Splitting training/testing sets ... "
 mkdir -p ${DIR_DATA}/training
 mkdir -p ${DIR_DATA}/testing
 python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
+python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
 echo "Analyzing DE genes ... "
 Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP $THLD_PVAL $THLD_FC ${DIR_DATA}/training/top_de_genes.txt
@@ -60,11 +64,14 @@ for ML_MODEL in "${ML_MODELS[@]}"; do
 	python ${DIR_SCRIPTS}/incorporate_patient_info.py -p ${PATIENT_SHEET} -d ${DIR_DATA}/training/training_set.txt
 	python ${DIR_SCRIPTS}/incorporate_patient_info.py -p ${PATIENT_SHEET} -d ${DIR_DATA}/testing/testing_set.txt 
 
+	python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/training/chipdata_full.txt -o ${DIR_DATA}/training/training_set_full.txt
+	python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/testing/chipdata_full.txt -o ${DIR_DATA}/testing/testing_set_full.txt
+
 	echo "Training models ... "
 	rm -rf $ML_MODEL
-	python ${DIR_SCRIPTS}/crc_training.py -i ${DIR_DATA}/training/training_set.txt -a $ML_MODEL -o ${DIR_DATA}/training/${ML_MODEL}
+	python ${DIR_SCRIPTS}/crc_training.py -i ${DIR_DATA}/training/training_set.txt -f ${DIR_DATA}/training/training_set_full.txt -a $ML_MODEL -p $CRC_PREDICTORS -o ${DIR_DATA}/training/${ML_MODEL}
 
-	echo "Testing prediction ... "
-	python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -a $ML_MODEL -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl
-	echo ""
+	# echo "Testing prediction ... "
+	# python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -a $ML_MODEL -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl
+	# echo ""
 done

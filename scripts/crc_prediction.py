@@ -1,5 +1,4 @@
 #/usr/bin/python
-
 import sys
 import argparse
 import numpy
@@ -8,7 +7,7 @@ from sklearn.externals import joblib
 learning_algorithms = ['random_forest', 'svm', 'neural_net', 'grad_boosting']
 
 def parse_args(argv):
-	parser = argparse.ArgumentParser(description='Predict EE category using trained  Random Forest model.')
+	parser = argparse.ArgumentParser(description="")
 	parser.add_argument('-a', '--learning_algorithm', dest='learning_algorithm', default='random_forest', help='options: %s' % learning_algorithms)
 	parser.add_argument('-i', '--input_filename', dest='input_filename')
 	parser.add_argument('-m', '--model_filename', dest='model_filename')
