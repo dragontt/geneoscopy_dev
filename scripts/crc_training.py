@@ -16,6 +16,7 @@ def parse_args(argv):
 	parser.add_argument('-i', '--input_expr', dest='input_expr')
 	parser.add_argument('-f', '--input_expr_full', dest='input_expr_full')
 	parser.add_argument('-p', '--outlier_predictors', dest='outlier_predictors')
+	parser.add_argument('-s', '--normal_stats', dest='normal_stats')
 	parser.add_argument('-o', '--output_directory', dest='output_directory')
 	parsed = parser.parse_args(argv[1:])
 	return parsed
@@ -64,7 +65,7 @@ def get_predictor_expr(filename, expr, gene_id):
 
 
 def parse_predictor_stats(expr):
-	return (np.median(expr, axis=0), np.median(expr, axis=0), np.percentile(expr, 75, axis=0))
+	return (np.median(expr, axis=0), np.median(expr, axis=0), np.percentile(expr, 25, axis=0),np.percentile(expr, 75, axis=0))
 
 
 def main(argv):
@@ -142,7 +143,7 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 
-		optimal_param = 3
+		optimal_param = 2
 		## cross validation
 		# n_folds = 10
 		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
@@ -183,23 +184,27 @@ def main(argv):
 		(tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_tr_full, gene_id_full)
 		print "Predictors added:", tc_predictors
 		weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
-		(tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd, tc_predictors_normal_expr_third_pctil) = parse_predictor_stats(tc_predictors_expr)
+		(tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd, tc_predictors_first_pct, tc_predictors_third_pct) = parse_predictor_stats(tc_predictors_expr)
 		# thlds = tc_predictors_normal_expr_median + 2*tc_predictors_normal_expr_sd
-		thlds = tc_predictors_normal_expr_third_pctil
-		for j in range(len(tc_predictors)):
-			print tc_predictors[j], tc_predictors_normal_expr_median[j], tc_predictors_normal_expr_sd[j], tc_predictors_normal_expr_third_pctil[j]
+		thlds = 1*(tc_predictors_third_pct - tc_predictors_first_pct) + tc_predictors_third_pct
 		for j in range(len(tc_predictors)):
 			indx = np.where(tc_predictors_expr[:,j] > thlds[j])[0]
 			for i in indx:
 				score_predictors[i] += weight_predictors[j]
+				# score_predictors[i] = .2
+		## save normal statistis 
+		out_normal_stats = [["TC_id", "median", "sd", "1st_pct", "3rd_pct"]]
+		for j in range(len(tc_predictors)):
+			out_normal_stats.append([tc_predictors[j], tc_predictors_normal_expr_median[j], tc_predictors_normal_expr_sd[j], tc_predictors_first_pct[j], tc_predictors_third_pct[j]])
+		np.savetxt(parsed.normal_stats, np.array(out_normal_stats, dtype=str), fmt="%s", delimiter="\t")
 		## final prediction
-		print "sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"
+		print("\t".join(["sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"]))
 		score_final = []
 		for i in range(len(sample_id)):
 			score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
 			score_final.append(score)
 			predicted_label = "C" if score > .5 else "N"
-			print sample_id[i], label_tr[i], predicted_label, score_ml[i], score_predictors[i], score, score != score_ml[i]
+			print("\t".join([sample_id[i], label_tr[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
 		
 
 	##### Gaussian Process #####

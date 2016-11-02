@@ -3,17 +3,16 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-dir_data = "/Users/KANG/geneoscopy_dev/data/20161014_project_combined_2283_abcde/"
-file_expr = dir_data + "chipdata_geneset_x_valid_chips.txt"
-file_sample = dir_data + "sample_sheet_combined_abcde.two_group_no_benign.txt"
+dir_data = "/Users/KANG/geneoscopy_dev/data/20160903_project_combined_2283_a_b_c_d_normal_vs_cancer/"
+file_expr = dir_data + "chipdata_full.training.txt"
+file_sample = dir_data + "sample_sheet_combined_a_b_c_d.two_group_no_benign.txt"
 
 bs = ["1", "2", "3", "4", "5"]
 labels = ["C", "N"]
 colors_arr = ["r", "g"]
-
+"""
 # cg_genes = {'NDRG4':'TC16000503.hg.1', 'BMP3':'TC04000449.hg.1', 'KRAS':'TC12001314.hg.1'}
 cg_genes = {'TC6_ssto_hap7000119' : 'TC6_ssto_hap7000119.hg.1'}
-
 """
 cg_genes = {}
 file_genes = dir_data + "../external_data/CIViC/civic_genes_TCs.txt"
@@ -25,7 +24,6 @@ for line in lines:
 		tcs = tmp[1].split(",")
 		for tc in tcs:
 			cg_genes[gene +"_"+ tc] = tc
-"""
 
 expr = np.loadtxt(file_expr, dtype=str, delimiter='\t')
 meta = np.loadtxt(file_sample, dtype=str, usecols=[1,2,3], skiprows=1, delimiter='\t')
@@ -78,7 +76,6 @@ for i in range(len(labels)):
 	batch["all"+labels[i]] = []
 
 for g in cg_genes.keys():
-	print g
 	plt.figure()
 	bp = plt.boxplot(gene_expr[g], positions=locs, patch_artist=True)
 	for b,c in zip(bp['boxes'], colors):
@@ -88,3 +85,7 @@ for g in cg_genes.keys():
 	plt.xlabel('batch + label')
 	plt.ylabel('log expression')
 	plt.savefig(dir_data+"figures/"+g+".png", format="png")
+
+	# print g, "\t", len(bp["fliers"][21].get_data()[1]) ,"\t", len(bp["fliers"][23].get_data()[1])
+
+

@@ -17,7 +17,7 @@ file_gene_list = proj_dir + "external_data/Genecards_colon_cancer/GeneCards_gene
 file_gene_out = proj_dir + "external_data/Genecards_colon_cancer/GeneCards_genes_annotated.txt"
 genes = np.loadtxt(file_gene_list, dtype=str)[np.newaxis].T
 """
-file_gene_list = proj_dir + "external_data/CIViC/civic_genes_TCs.txt"
+file_gene_list = proj_dir + "external_data/CIViC/civic_genes.txt"
 file_gene_out = proj_dir + "external_data/CIViC/civic_genes_TCs.txt"
 genes = np.loadtxt(file_gene_list, dtype=str)[np.newaxis].T
 

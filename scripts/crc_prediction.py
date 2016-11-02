@@ -12,20 +12,22 @@ def parse_args(argv):
 	parser.add_argument('-i', '--input_expr', dest='input_expr')
 	parser.add_argument('-f', '--input_expr_full', dest='input_expr_full')
 	parser.add_argument('-p', '--outlier_predictors', dest='outlier_predictors')
+	parser.add_argument('-s', '--normal_stats', dest='normal_stats')
 	parser.add_argument('-m', '--model_filename', dest='model_filename')
 	parsed = parser.parse_args(argv[1:])
 	return parsed
 
 
-def parse_data(filename, label_col, data_col_start, data_col_end=10000):
+def parse_data(filename, label_col, data_col_start):
 	data = np.loadtxt(filename, dtype=str, delimiter='\t')
-	gene_id = data[0, data_col_start:data_col_end]
+	gene_id = data[0, data_col_start:]
 	sample_id = data[1:, 0]
-	expr = np.array(data[1:, data_col_start:data_col_end], dtype=np.float32)
+	expr = np.array(data[1:, data_col_start:], dtype=np.float32)
 	label = data[1:, label_col]
 	return [gene_id, sample_id, expr, label]
 
 def get_predictor_expr(filename, expr, gene_id):
+	print expr.shape
 	f = open(filename, "r")
 	lines = f.readlines()
 	tc_predictors_indx = []
@@ -41,8 +43,12 @@ def get_predictor_expr(filename, expr, gene_id):
 	return (tc_predictors, expr[:, tc_predictors_indx])
 
 
-def parse_predictor_stats(expr):
-	return (np.median(expr, axis=0), np.median(expr, axis=0), np.percentile(expr, 75, axis=0))
+def parse_normal_stats(filename):
+	stats = np.loadtxt(filename, skiprows=1, dtype=str)
+	stats_dict = {}
+	for i in range(len(stats)):
+		stats_dict[stats[i,0]] = [float(stats[i,3]), float(stats[i,4])]
+	return stats_dict
 
 
 def main(argv):
@@ -122,23 +128,23 @@ def main(argv):
 		## add weight to outlier predictors
 		score_predictors = np.zeros(len(sample_id))
 		(tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_te_full, gene_id_full)
-		print "Predictors added:", tc_predictors
 		weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
-		(tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd, tc_predictors_normal_expr_third_pctil) = parse_predictor_stats(tc_predictors_expr)
-		# thlds = tc_predictors_normal_expr_median + 2*tc_predictors_normal_expr_sd
-		thlds = tc_predictors_normal_expr_third_pctil
+		tc_predictors_pct = parse_normal_stats(parsed.normal_stats)
 		for j in range(len(tc_predictors)):
-			indx = np.where(tc_predictors_expr[:,j] > thlds[j])[0]
+			pcts = tc_predictors_pct[tc_predictors[j]]
+			thld = 1*(pcts[1] - pcts[0]) + pcts[1]
+			indx = np.where(tc_predictors_expr[:,j] > thld)[0]
 			for i in indx:
 				score_predictors[i] += weight_predictors[j]
+				# score_predictors[i] = .2
 		## final prediction
-		print "sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"
+		print("\t".join(["sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"]))
 		score_final = []
 		for i in range(len(sample_id)):
 			score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
 			score_final.append(score)
 			predicted_label = "C" if score > .5 else "N"
-			print sample_id[i], label_te[i], predicted_label, score_ml[i], score_predictors[i], score, score != score_ml[i]
+			print("\t".join( [sample_id[i], label_te[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
 
 		##print messages
 		# print "sample_id true_label predict_label", clf.classes_

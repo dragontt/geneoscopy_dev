@@ -1,29 +1,31 @@
 #!/usr/bash
 DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 
-# NUM_SAMPLES=84
-# GROUP=N_vs_C
-# THLD_PVAL=0.4
-# THLD_FC=0
-# DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_a_b_c_d
-# NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.nanostring.txt
-# QC_TABLE=${DIR_DATA}/QC_table_combined_a_b_c_d.txt
-# SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_a_b_c_d.two_group_no_benign.txt
-# PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
-# VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benign.txt
-
-NUM_SAMPLES=107
+NUM_SAMPLES=84
 GROUP=N_vs_C
 THLD_PVAL=0.4
 THLD_FC=0
-DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcde
+DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_a_b_c_d
 NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.nanostring.txt
 NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
-QC_TABLE=${DIR_DATA}/QC_table_combined_abcde.txt
-SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcde.two_group_no_benign.txt
+QC_TABLE=${DIR_DATA}/QC_table_combined_a_b_c_d.txt
+SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_a_b_c_d.two_group_no_benign.txt
 PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
 VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benign.txt
-CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_genes_TCs.txt
+CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
+
+# NUM_SAMPLES=107
+# GROUP=N_vs_C
+# THLD_PVAL=0.4
+# THLD_FC=0
+# DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcd_e
+# NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.nanostring.txt
+# NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
+# QC_TABLE=${DIR_DATA}/QC_table_combined_abcde.txt
+# SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcde.two_group_no_benign.txt
+# PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
+# VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benign.txt
+# CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
 
 
 echo "Num of total samples:" $NUM_SAMPLES
@@ -69,9 +71,9 @@ for ML_MODEL in "${ML_MODELS[@]}"; do
 
 	echo "Training models ... "
 	rm -rf $ML_MODEL
-	python ${DIR_SCRIPTS}/crc_training.py -i ${DIR_DATA}/training/training_set.txt -f ${DIR_DATA}/training/training_set_full.txt -a $ML_MODEL -p $CRC_PREDICTORS -o ${DIR_DATA}/training/${ML_MODEL}
+	python ${DIR_SCRIPTS}/crc_training.py -i ${DIR_DATA}/training/training_set.txt -f ${DIR_DATA}/training/training_set_full.txt -a $ML_MODEL -p $CRC_PREDICTORS -o ${DIR_DATA}/training/${ML_MODEL} -s ${DIR_DATA}/training/predictor_normal_stats.txt
 
 	echo "Testing prediction ... "
-	python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -f ${DIR_DATA}/testing/testing_set_full.txt -a $ML_MODEL -p $CRC_PREDICTORS -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl
+	python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -f ${DIR_DATA}/testing/testing_set_full.txt -a $ML_MODEL -p $CRC_PREDICTORS -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl -s ${DIR_DATA}/training/predictor_normal_stats.txt
 	echo ""
 done
