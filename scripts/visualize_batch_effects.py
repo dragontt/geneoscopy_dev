@@ -3,9 +3,9 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-dir_data = "/Users/KANG/geneoscopy_dev/data/20160903_project_combined_2283_a_b_c_d_normal_vs_cancer/"
-file_expr = dir_data + "chipdata_full.training.txt"
-file_sample = dir_data + "sample_sheet_combined_a_b_c_d.two_group_no_benign.txt"
+dir_data = "/Users/KANG/geneoscopy_dev/data/20161014_project_combined_2283_abcde/"
+file_expr = dir_data + "batch_effect_removal/chipdata_geneset_x_valid_chips.batcheff_removed.txt"
+file_sample = dir_data + "sample_sheet_combined_abcde.two_group_no_benign.txt"
 
 bs = ["1", "2", "3", "4", "5"]
 labels = ["C", "N"]

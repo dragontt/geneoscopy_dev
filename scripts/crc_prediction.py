@@ -123,33 +123,33 @@ def main(argv):
 		accuracy_predicted = clf.score(expr_te, label_te)
 		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
-		## calculate score for ML prediction
-		score_ml = .8*clf.predict_proba(expr_te)[:,0]
-		## add weight to outlier predictors
-		score_predictors = np.zeros(len(sample_id))
-		(tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_te_full, gene_id_full)
-		weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
-		tc_predictors_pct = parse_normal_stats(parsed.normal_stats)
-		for j in range(len(tc_predictors)):
-			pcts = tc_predictors_pct[tc_predictors[j]]
-			thld = 1*(pcts[1] - pcts[0]) + pcts[1]
-			indx = np.where(tc_predictors_expr[:,j] > thld)[0]
-			for i in indx:
-				score_predictors[i] += weight_predictors[j]
-				# score_predictors[i] = .2
-		## final prediction
-		print("\t".join(["sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"]))
-		score_final = []
-		for i in range(len(sample_id)):
-			score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
-			score_final.append(score)
-			predicted_label = "C" if score > .5 else "N"
-			print("\t".join( [sample_id[i], label_te[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
+		# ## calculate score for ML prediction
+		# score_ml = .8*clf.predict_proba(expr_te)[:,0]
+		# ## add weight to outlier predictors
+		# score_predictors = np.zeros(len(sample_id))
+		# (tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_te_full, gene_id_full)
+		# weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
+		# tc_predictors_pct = parse_normal_stats(parsed.normal_stats)
+		# for j in range(len(tc_predictors)):
+		# 	pcts = tc_predictors_pct[tc_predictors[j]]
+		# 	thld = 1*(pcts[1] - pcts[0]) + pcts[1]
+		# 	indx = np.where(tc_predictors_expr[:,j] > thld)[0]
+		# 	for i in indx:
+		# 		score_predictors[i] += weight_predictors[j]
+		# 		# score_predictors[i] = .2
+		# ## final prediction
+		# print("\t".join(["sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"]))
+		# score_final = []
+		# for i in range(len(sample_id)):
+		# 	score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
+		# 	score_final.append(score)
+		# 	predicted_label = "C" if score > .5 else "N"
+		# 	print("\t".join( [sample_id[i], label_te[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
 
-		##print messages
-		# print "sample_id true_label predict_label", clf.classes_
-		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
-		# print "Prediction accuracy:", accuracy_predicted
+		#print messages
+		print "sample_id true_label predict_label", clf.classes_
+		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
+		print "Prediction accuracy:", accuracy_predicted
 
 
 

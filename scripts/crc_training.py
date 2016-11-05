@@ -143,7 +143,7 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 
-		optimal_param = 2
+		optimal_param = 3
 		## cross validation
 		# n_folds = 10
 		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
@@ -177,34 +177,34 @@ def main(argv):
 		if parsed.output_directory != None:
 			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
 
-		## calculate score for ML prediction
-		score_ml = .8*clf.predict_proba(expr_tr)[:,0]
-		## add weight to outlier predictors
-		score_predictors = np.zeros(len(sample_id))
-		(tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_tr_full, gene_id_full)
-		print "Predictors added:", tc_predictors
-		weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
-		(tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd, tc_predictors_first_pct, tc_predictors_third_pct) = parse_predictor_stats(tc_predictors_expr)
-		# thlds = tc_predictors_normal_expr_median + 2*tc_predictors_normal_expr_sd
-		thlds = 1*(tc_predictors_third_pct - tc_predictors_first_pct) + tc_predictors_third_pct
-		for j in range(len(tc_predictors)):
-			indx = np.where(tc_predictors_expr[:,j] > thlds[j])[0]
-			for i in indx:
-				score_predictors[i] += weight_predictors[j]
-				# score_predictors[i] = .2
-		## save normal statistis 
-		out_normal_stats = [["TC_id", "median", "sd", "1st_pct", "3rd_pct"]]
-		for j in range(len(tc_predictors)):
-			out_normal_stats.append([tc_predictors[j], tc_predictors_normal_expr_median[j], tc_predictors_normal_expr_sd[j], tc_predictors_first_pct[j], tc_predictors_third_pct[j]])
-		np.savetxt(parsed.normal_stats, np.array(out_normal_stats, dtype=str), fmt="%s", delimiter="\t")
-		## final prediction
-		print("\t".join(["sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"]))
-		score_final = []
-		for i in range(len(sample_id)):
-			score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
-			score_final.append(score)
-			predicted_label = "C" if score > .5 else "N"
-			print("\t".join([sample_id[i], label_tr[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
+		# ## calculate score for ML prediction
+		# score_ml = .8*clf.predict_proba(expr_tr)[:,0]
+		# ## add weight to outlier predictors
+		# score_predictors = np.zeros(len(sample_id))
+		# (tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_tr_full, gene_id_full)
+		# print "Predictors added:", tc_predictors
+		# weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
+		# (tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd, tc_predictors_first_pct, tc_predictors_third_pct) = parse_predictor_stats(tc_predictors_expr)
+		# # thlds = tc_predictors_normal_expr_median + 2*tc_predictors_normal_expr_sd
+		# thlds = 1*(tc_predictors_third_pct - tc_predictors_first_pct) + tc_predictors_third_pct
+		# for j in range(len(tc_predictors)):
+		# 	indx = np.where(tc_predictors_expr[:,j] > thlds[j])[0]
+		# 	for i in indx:
+		# 		score_predictors[i] += weight_predictors[j]
+		# 		# score_predictors[i] = .2
+		# ## save normal statistis 
+		# out_normal_stats = [["TC_id", "median", "sd", "1st_pct", "3rd_pct"]]
+		# for j in range(len(tc_predictors)):
+		# 	out_normal_stats.append([tc_predictors[j], tc_predictors_normal_expr_median[j], tc_predictors_normal_expr_sd[j], tc_predictors_first_pct[j], tc_predictors_third_pct[j]])
+		# np.savetxt(parsed.normal_stats, np.array(out_normal_stats, dtype=str), fmt="%s", delimiter="\t")
+		# ## final prediction
+		# print("\t".join(["sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"]))
+		# score_final = []
+		# for i in range(len(sample_id)):
+		# 	score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
+		# 	score_final.append(score)
+		# 	predicted_label = "C" if score > .5 else "N"
+		# 	print("\t".join([sample_id[i], label_tr[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
 		
 
 	##### Gaussian Process #####
