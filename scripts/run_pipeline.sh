@@ -3,32 +3,35 @@ DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 
 ##### INPUT VARIABLES #####
 
-NUM_SAMPLES=84
-GROUP=N_vs_C
-GENE_FILTER=nanostring
-THLD_PVAL=0.4
-THLD_FC=0
-DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_a_b_c_d
-NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
-NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
-QC_TABLE=${DIR_DATA}/QC_table_combined_a_b_c_d.txt
-SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_a_b_c_d.two_group_no_benign.txt
-PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
-VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benign.txt
-CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
-
-# NUM_SAMPLES=107
+# DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_a_b_c_d
+# NUM_SAMPLES=84
 # GROUP=N_vs_C
+# GENE_FILTER=nanostring
 # THLD_PVAL=0.4
 # THLD_FC=0
-# DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcde_batcheff_removed
-# NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.batcheff_removed.nanostring.txt
-# NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.batcheff_removed.txt
-# QC_TABLE=${DIR_DATA}/QC_table_combined_abcde.txt
-# SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcde.two_group_no_benign.txt
+# NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
+# NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
+# GENE_FILTER_LST=${DIR_DATA}/../external_data/nanostring/PanCancer_nanostring_genes_annotated.txt
+# QC_TABLE=${DIR_DATA}/QC_table_combined_a_b_c_d.txt
+# SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_a_b_c_d.two_group_no_benign.txt
 # PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
 # VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benign.txt
 # CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
+
+DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcdefg
+NUM_SAMPLES=154
+GROUP=N_vs_P_vs_C
+GENE_FILTER=nanostring
+THLD_PVAL=0.4
+THLD_FC=0
+NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
+NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
+GENE_FILTER_LST=${DIR_DATA}/../external_data/nanostring/PanCancer_nanostring_genes_annotated.txt 
+QC_TABLE=${DIR_DATA}/QC_table_combined_abcdefg.txt
+SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefg.txt
+PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
+VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benign.txt
+CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
 
 ##### END OF INPUT VARIABLES #####
 
@@ -45,7 +48,7 @@ echo "Filtering gene set ... "
 python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
 
 echo "Running quality control ... "
-python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
+python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -v $VALID_CHIPS -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
 python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA_FULL -q $QC_TABLE -s $SAMPLE_SHEET -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
 
 echo "Splitting training/testing sets ... "

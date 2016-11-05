@@ -110,7 +110,7 @@ def main(argv):
 	# valid_chips = filter_rle_mean(qc_table, .25)
 
 	# group samples by pos vs neg auc
-	valid_chips = filter_pos_vs_neg_auc(qc_table, .75)
+	valid_chips = filter_pos_vs_neg_auc(qc_table, .7)
 
 	# check if auc mean of diseased vs mean of normal is sig different
 	# pass
