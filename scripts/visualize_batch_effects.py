@@ -3,11 +3,11 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-dir_data = "/Users/KANG/geneoscopy_dev/data/20161014_project_combined_2283_abcde/"
-file_expr = dir_data + "batch_effect_removal/chipdata_geneset_x_valid_chips.batcheff_removed.txt"
-file_sample = dir_data + "sample_sheet_combined_abcde.two_group_no_benign.txt"
+dir_data = "/Users/KANG/geneoscopy_dev/data/20161105_combined_project_2283_abcdefg/"
+file_expr = dir_data + "chipdata_geneset_x_valid_chips_full.txt"
+file_sample = dir_data + "sample_sheet_combined_abcdefg.two_group_no_benign.txt"
 
-bs = ["1", "2", "3", "4", "5"]
+bs = ["1", "2", "3", "4", "5", "6", "7"]
 labels = ["C", "N"]
 colors_arr = ["r", "g"]
 """

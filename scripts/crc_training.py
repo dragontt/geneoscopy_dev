@@ -68,6 +68,46 @@ def parse_predictor_stats(expr):
 	return (np.median(expr, axis=0), np.median(expr, axis=0), np.percentile(expr, 25, axis=0),np.percentile(expr, 75, axis=0))
 
 
+def boostrap_label_group(sample_id, expr, labels):
+	## boostrap label groups that have smaller number of samples to match the largest
+	unique_labels = np.unique(labels)
+	label_indx_dict = {}
+	largest_sample_num = 0
+	for ul in unique_labels:
+		tmp_arr = np.where(labels == ul)[0]
+		label_indx_dict[ul] = tmp_arr
+		largest_sample_num = len(tmp_arr) if len(tmp_arr)>largest_sample_num else largest_sample_num
+	for ul in unique_labels:
+		tmp_arr = label_indx_dict[ul]
+		if len(tmp_arr) != largest_sample_num:
+			new_arr = np.random.choice(tmp_arr, largest_sample_num-len(tmp_arr), replace=True)
+			sample_id = np.append(sample_id, sample_id[new_arr])
+			expr = np.vstack((expr, expr[new_arr,]))
+			labels = np.append(labels, labels[new_arr])
+	return (sample_id, expr, labels)
+
+
+def subsample_label_group(sample_id, expr, labels):
+	## subsample label groups that have larger number of samples to match the smallest
+	unique_labels = np.unique(labels)
+	label_indx_dict = {}
+	smallest_sample_num = 10000000000
+	for ul in unique_labels:
+		tmp_arr = np.where(labels == ul)[0]
+		label_indx_dict[ul] = tmp_arr
+		smallest_sample_num = len(tmp_arr) if len(tmp_arr)<smallest_sample_num else smallest_sample_num
+	indx_to_remove = np.array([])
+	for ul in unique_labels:
+		tmp_arr = label_indx_dict[ul]
+		if len(tmp_arr) != smallest_sample_num:
+			new_arr = np.random.choice(tmp_arr, len(tmp_arr)-smallest_sample_num, replace=False)
+			indx_to_remove = np.append(indx_to_remove, new_arr)
+	sample_id = np.delete(sample_id, indx_to_remove)
+	expr = np.delete(expr, indx_to_remove, axis=0)
+	labels = np.delete(labels, indx_to_remove)
+	return (sample_id, expr, labels)
+
+
 def main(argv):
 	# parse data
 	parsed = parse_args(argv)
@@ -79,6 +119,13 @@ def main(argv):
 	
 	[gene_id, sample_id, expr_tr, label_tr] = parse_data(parsed.input_expr, 1, 2)
 	[gene_id_full, foo, expr_tr_full, foo] = parse_data(parsed.input_expr_full, 1, 2)
+
+	## boostrap the label groups with smaller samples
+	# [foo, expr_tr_full, foo] = boostrap_label_group(sample_id, expr_tr_full, label_tr)
+	# [sample_id, expr_tr, label_tr] = boostrap_label_group(sample_id, expr_tr, label_tr)
+	## subsample the label groups with larger samples
+	[foo, expr_tr_full, foo] = subsample_label_group(sample_id, expr_tr_full, label_tr)
+	[sample_id, expr_tr, label_tr] = subsample_label_group(sample_id, expr_tr, label_tr)
 	
 	label_unique= np.unique(label_tr)
 	label_count = np.array([len(np.where(label_tr == l)[0]) for l in label_unique])
@@ -143,30 +190,30 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 
-		# optimal_param = 3
+		optimal_param = 3
 		## cross validation
-		n_folds = 10
-		(expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		param_range = [2,3,4,5,6,7,8,9,10] # choose the param to tune
-		accuracy_lst = []
-		for p in param_range:
-			print "Running cross valdiation ... p =", p
-			clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
-			accuracy_sum = 0
-			for i in range(n_folds):
-				# internal training and testing
-				expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
-				label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
-				expr_tr1 = expr_tr_cv[i]
-				label_tr1 = label_tr_cv[i]
-				clf.fit(expr_tr0, label_tr0)
-				label_pred = clf.predict(expr_tr1)
-				accuracy_pred = clf.score(expr_tr, label_tr)
-				accuracy_sum += accuracy_pred
-			accuracy_lst.append(accuracy_sum/float(n_folds))
-			print "   Average accuracy:", accuracy_sum/float(n_folds)
-		optimal_param = param_range[np.argmax(accuracy_lst)]
-		print "Optimal param:", optimal_param
+		# n_folds = 10
+		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
+		# param_range = [2,3,4,5,6,7,8,9,10] # choose the param to tune
+		# accuracy_lst = []
+		# for p in param_range:
+		# 	print "Running cross valdiation ... p =", p
+		# 	clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
+		# 	accuracy_sum = 0
+		# 	for i in range(n_folds):
+		# 		# internal training and testing
+		# 		expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
+		# 		label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
+		# 		expr_tr1 = expr_tr_cv[i]
+		# 		label_tr1 = label_tr_cv[i]
+		# 		clf.fit(expr_tr0, label_tr0)
+		# 		label_pred = clf.predict(expr_tr1)
+		# 		accuracy_pred = clf.score(expr_tr, label_tr)
+		# 		accuracy_sum += accuracy_pred
+		# 	accuracy_lst.append(accuracy_sum/float(n_folds))
+		# 	print "   Average accuracy:", accuracy_sum/float(n_folds)
+		# optimal_param = param_range[np.argmax(accuracy_lst)]
+		# print "Optimal param:", optimal_param
 
 		## train the model
 		clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)

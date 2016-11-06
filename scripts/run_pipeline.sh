@@ -22,7 +22,7 @@ DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcdefg
 NUM_SAMPLES=154
 GROUP=N_vs_C
 GENE_FILTER=nanostring
-THLD_PVAL=1
+THLD_PVAL=0.1
 THLD_FC=0
 NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
 NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
@@ -35,31 +35,31 @@ CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
 
 ##### END OF INPUT VARIABLES #####
 
-echo "Num of total samples:" $NUM_SAMPLES
-echo "Label groups:" $GROUP
-echo "DE p-value treshold:" $THLD_PVAL
-echo "DE fold change threshold:" $THLD_FC
-echo "Normalized expr data:" $NORMALIZED_CHIPDATA
-echo "QC table:" $QC_TABLE
-echo "Sample sheet:" $SAMPLE_SHEET
-echo ""
+# echo "Num of total samples:" $NUM_SAMPLES
+# echo "Label groups:" $GROUP
+# echo "DE p-value treshold:" $THLD_PVAL
+# echo "DE fold change threshold:" $THLD_FC
+# echo "Normalized expr data:" $NORMALIZED_CHIPDATA
+# echo "QC table:" $QC_TABLE
+# echo "Sample sheet:" $SAMPLE_SHEET
+# echo ""
 
-echo "Filtering gene set ... "
-python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
-# NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
+# echo "Filtering gene set ... "
+# python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
+# # NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
 
-echo "Running quality control ... "
-python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -v $VALID_CHIPS -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
-python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA_FULL -q $QC_TABLE -s $SAMPLE_SHEET -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
+# echo "Running quality control ... "
+# python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -v $VALID_CHIPS -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
+# python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA_FULL -q $QC_TABLE -s $SAMPLE_SHEET -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
 
-echo "Splitting training/testing sets ... "
-mkdir -p ${DIR_DATA}/training
-mkdir -p ${DIR_DATA}/testing
-python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
-python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
+# echo "Splitting training/testing sets ... "
+# mkdir -p ${DIR_DATA}/training
+# mkdir -p ${DIR_DATA}/testing
+# python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
+# python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
-echo "Analyzing DE genes ... "
-Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP $THLD_PVAL $THLD_FC ${DIR_DATA}/training/top_de_genes.txt
+# echo "Analyzing DE genes ... "
+# Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP $THLD_PVAL $THLD_FC ${DIR_DATA}/training/top_de_genes.txt
 
 # python ${DIR_SCRIPTS}/de_analysis_sd.py ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt ${DIR_DATA}/training/top_de_genes.txt
 NUM_TOP_GENES=$(( $( wc -l ${DIR_DATA}/training/top_de_genes.txt | awk '{print $1}') - 1 ))
