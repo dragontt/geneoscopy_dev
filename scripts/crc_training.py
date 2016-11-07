@@ -190,7 +190,7 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 
-		optimal_param = 3
+		optimal_param = 4
 		## cross validation
 		# n_folds = 10
 		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)

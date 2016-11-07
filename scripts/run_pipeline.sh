@@ -47,8 +47,8 @@ echo "Sample sheet:" $SAMPLE_SHEET
 echo ""
 
 echo "Filtering gene set ... "
-# python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
-NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
+python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
+# NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
 
 echo "Running quality control ... "
 python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v $VALID_CHIPS -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
