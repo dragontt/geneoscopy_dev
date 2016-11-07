@@ -190,30 +190,30 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 
-		# optimal_param = 3
+		optimal_param = 3
 		## cross validation
-		n_folds = 10
-		(expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		param_range = [2,3,4,5,6,7,8,9,10] # choose the param to tune
-		accuracy_lst = []
-		for p in param_range:
-			print "Running cross valdiation ... p =", p
-			clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
-			accuracy_sum = 0
-			for i in range(n_folds):
-				# internal training and testing
-				expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
-				label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
-				expr_tr1 = expr_tr_cv[i]
-				label_tr1 = label_tr_cv[i]
-				clf.fit(expr_tr0, label_tr0)
-				label_pred = clf.predict(expr_tr1)
-				accuracy_pred = clf.score(expr_tr, label_tr)
-				accuracy_sum += accuracy_pred
-			accuracy_lst.append(accuracy_sum/float(n_folds))
-			print "   Average accuracy:", accuracy_sum/float(n_folds)
-		optimal_param = param_range[np.argmax(accuracy_lst)]
-		print "Optimal param:", optimal_param
+		# n_folds = 10
+		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
+		# param_range = [2,3,4,5,6,7,8,9,10] # choose the param to tune
+		# accuracy_lst = []
+		# for p in param_range:
+		# 	print "Running cross valdiation ... p =", p
+		# 	clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
+		# 	accuracy_sum = 0
+		# 	for i in range(n_folds):
+		# 		# internal training and testing
+		# 		expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
+		# 		label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
+		# 		expr_tr1 = expr_tr_cv[i]
+		# 		label_tr1 = label_tr_cv[i]
+		# 		clf.fit(expr_tr0, label_tr0)
+		# 		label_pred = clf.predict(expr_tr1)
+		# 		accuracy_pred = clf.score(expr_tr, label_tr)
+		# 		accuracy_sum += accuracy_pred
+		# 	accuracy_lst.append(accuracy_sum/float(n_folds))
+		# 	print "   Average accuracy:", accuracy_sum/float(n_folds)
+		# optimal_param = param_range[np.argmax(accuracy_lst)]
+		# print "Optimal param:", optimal_param
 
 		## train the model
 		# clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)

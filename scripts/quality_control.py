@@ -44,6 +44,16 @@ def filter_pos_vs_neg_auc(qc_table, auc_threshold):
 	return valid_chips
 
 
+def filter_banding(qc_table, banding_qualities):
+	valid_chips = []
+	for i in range(len(qc_table)):
+		sample = qc_table[i,0].split('.')[0]
+		banding = qc_table[i,7]
+		if banding in banding_qualities:
+			valid_chips.append(sample)
+	return valid_chips
+
+
 def compute_group_difference():
 	pass
 
@@ -102,28 +112,31 @@ def main(argv):
 	parsed = parse_args(argv)
 	num_samples = parsed.num_samples
 
-	# load files
+	## load files
 	data = numpy.loadtxt(parsed.data, dtype=str, delimiter='\t', usecols=range(num_samples+1))
 	qc_table = numpy.loadtxt(parsed.qc_table, dtype=str, delimiter='\t', skiprows=1)
 	sample_sheet = numpy.loadtxt(parsed.sample_sheet, dtype=str, delimiter='\t', skiprows=1)
 	
-	# filter out samples with rle mean > 0.23~0.25
+	## filter out samples with rle mean > 0.23~0.25
 	# valid_chips = filter_rle_mean(qc_table, .25)
 
-	# group samples by pos vs neg auc
+	## group samples by pos vs neg auc
 	valid_chips = filter_pos_vs_neg_auc(qc_table, parsed.threshold)
 
-	# check if auc mean of diseased vs mean of normal is sig different
+	## filter out bad banding samples
+	# valid_chips = filter_banding(qc_table, ["Good", "Fair"])
+
+	## check if auc mean of diseased vs mean of normal is sig different
 	# pass
 
-	# append normal, polyps or CRC labels to the normal sample
-	# and randomize 80% for training and 205 for testing
+	## append normal, polyps or CRC labels to the normal sample
+	## and randomize 80% for training and 205 for testing
 	valid_chips = annotate_samples(valid_chips, sample_sheet)
 
-	# filter data using valid samples, and only use chipset with TC prefix
+	## filter data using valid samples, and only use chipset with TC prefix
 	filtered_data = filter_data(valid_chips, data)
 
-	# write valid samples and data
+	## write valid samples and data
 	write_output(parsed.valid_chips, parsed.valid_data, valid_chips, filtered_data, parsed.group)
 
 if __name__ == "__main__":
