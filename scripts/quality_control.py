@@ -16,6 +16,7 @@ def parse_args(argv):
 	parser.add_argument('-q', '--qc_table', dest='qc_table')
 	parser.add_argument('-s', '--sample_sheet', dest='sample_sheet')
 	parser.add_argument('-g', '--group', dest='group')
+	parser.add_argument('-t', '--threshold', dest='threshold', type=float)
 	parser.add_argument('-v', '--valid_chips', dest='valid_chips')
 	parser.add_argument('-o', '--valid_data', dest='valid_data')
 	parsed = parser.parse_args(argv[1:])
@@ -110,7 +111,7 @@ def main(argv):
 	# valid_chips = filter_rle_mean(qc_table, .25)
 
 	# group samples by pos vs neg auc
-	valid_chips = filter_pos_vs_neg_auc(qc_table, .7)
+	valid_chips = filter_pos_vs_neg_auc(qc_table, parsed.threshold)
 
 	# check if auc mean of diseased vs mean of normal is sig different
 	# pass

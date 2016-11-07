@@ -17,13 +17,18 @@ def parse_args(argv):
 def main(argv):
 	parsed = parse_args(argv)
 	
-	valid_chips = np.loadtxt(parsed.valid_chips, dtype=str)
-	indx_tr = np.where(valid_chips[:,2] == "0")[0]
-	indx_te = np.where(valid_chips[:,2] == "1")[0]
-
 	expr = np.loadtxt(parsed.input_expr, dtype=str, delimiter="\t")
 	rownames = expr[:,0][np.newaxis].T
 	expr = expr[:,1:]
+
+	valid_chips = np.loadtxt(parsed.valid_chips, dtype=str)
+	intersected_indx = []
+	for c in np.intersect1d(valid_chips[:,0], expr[0,:]):
+		intersected_indx.append(np.where(valid_chips[:,0] == c)[0][0])
+		
+	valid_chips = valid_chips[intersected_indx,:]
+	indx_tr = np.where(valid_chips[:,2] == "0")[0]
+	indx_te = np.where(valid_chips[:,2] == "1")[0]
 
 	np.savetxt(parsed.train_expr, np.hstack((rownames, expr[:,indx_tr])), fmt="%s", delimiter="\t")
 	if parsed.train_valid_chips != None:
