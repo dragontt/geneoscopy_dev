@@ -190,30 +190,31 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 
-		optimal_param = 4
+		# optimal_param = 3
 		## cross validation
-		# n_folds = 10
-		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		# param_range = [2,3,4,5,6,7,8,9,10] # choose the param to tune
-		# accuracy_lst = []
-		# for p in param_range:
-		# 	print "Running cross valdiation ... p =", p
-		# 	clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
-		# 	accuracy_sum = 0
-		# 	for i in range(n_folds):
-		# 		# internal training and testing
-		# 		expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
-		# 		label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
-		# 		expr_tr1 = expr_tr_cv[i]
-		# 		label_tr1 = label_tr_cv[i]
-		# 		clf.fit(expr_tr0, label_tr0)
-		# 		label_pred = clf.predict(expr_tr1)
-		# 		accuracy_pred = clf.score(expr_tr, label_tr)
-		# 		accuracy_sum += accuracy_pred
-		# 	accuracy_lst.append(accuracy_sum/float(n_folds))
-		# 	print "   Average accuracy:", accuracy_sum/float(n_folds)
-		# optimal_param = param_range[np.argmax(accuracy_lst)]
-		# print "Optimal param:", optimal_param
+		n_folds = 10
+		(expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
+		param_range = range(1,10) ##max depth
+		# param_range = [.0005, .001, .0015, .002, .0025, .005, .0075, .01] ##learning rate
+		accuracy_lst = []
+		for p in param_range:
+			print "Running cross valdiation ... p =", p
+			clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
+			accuracy_sum = 0
+			for i in range(n_folds):
+				# internal training and testing
+				expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
+				label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
+				expr_tr1 = expr_tr_cv[i]
+				label_tr1 = label_tr_cv[i]
+				clf.fit(expr_tr0, label_tr0)
+				label_pred = clf.predict(expr_tr1)
+				accuracy_pred = clf.score(expr_tr, label_tr)
+				accuracy_sum += accuracy_pred
+			accuracy_lst.append(accuracy_sum/float(n_folds))
+			print "   Average accuracy:", accuracy_sum/float(n_folds)
+		optimal_param = param_range[np.argmax(accuracy_lst)]
+		print "Optimal param:", optimal_param
 
 		## train the model
 		# clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)
@@ -260,32 +261,33 @@ def main(argv):
 		from sklearn.gaussian_process import GaussianProcessClassifier
 		from sklearn.gaussian_process.kernels import RBF
 
-		# cross validation
-		n_folds = 10
-		(expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		param_range = [.1,.25,.5,1,2.5,5,10] # choose the param to tune
-		accuracy_lst = []
-		for p in param_range:
-			print "Running cross valdiation ... p =", p
-			clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=p), optimizer="fmin_l_bfgs_b")
-			accuracy_sum = 0
-			for i in range(n_folds):
-				# internal training and testing
-				expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
-				label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
-				expr_tr1 = expr_tr_cv[i]
-				label_tr1 = label_tr_cv[i]
-				clf.fit(expr_tr0, label_tr0)
-				label_pred = clf.predict(expr_tr1)
-				accuracy_pred = len([label_pred[i] for i in range(len(label_pred)) if (label_pred[i] == label_tr1[i])]) / float(len(label_pred))
-				accuracy_sum += accuracy_pred
-			accuracy_lst.append(accuracy_sum/float(n_folds))
-			print "   Average accuracy:", accuracy_sum/float(n_folds)
-		optimal_param = param_range[np.argmax(accuracy_lst)]
-		print "Optimal param:", optimal_param
+		optimal_param = 1.0
+		## cross validation
+		# n_folds = 10
+		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
+		# param_range = [.1,.25,.5,1,2.5,5,10] # choose the param to tune
+		# accuracy_lst = []
+		# for p in param_range:
+		# 	print "Running cross valdiation ... p =", p
+		# 	clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=p), optimizer="fmin_l_bfgs_b")
+		# 	accuracy_sum = 0
+		# 	for i in range(n_folds):
+		# 		# internal training and testing
+		# 		expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
+		# 		label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
+		# 		expr_tr1 = expr_tr_cv[i]
+		# 		label_tr1 = label_tr_cv[i]
+		# 		clf.fit(expr_tr0, label_tr0)
+		# 		label_pred = clf.predict(expr_tr1)
+		# 		accuracy_pred = len([label_pred[i] for i in range(len(label_pred)) if (label_pred[i] == label_tr1[i])]) / float(len(label_pred))
+		# 		accuracy_sum += accuracy_pred
+		# 	accuracy_lst.append(accuracy_sum/float(n_folds))
+		# 	print "   Average accuracy:", accuracy_sum/float(n_folds)
+		# optimal_param = param_range[np.argmax(accuracy_lst)]
+		# print "Optimal param:", optimal_param
 
 		# train the model
-		clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=1.0), optimizer="fmin_l_bfgs_b")
+		clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=optimal_param), optimizer="fmin_l_bfgs_b")
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		print "Training accuracy:", clf.score(expr_tr, label_tr)
