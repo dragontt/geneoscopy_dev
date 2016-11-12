@@ -17,13 +17,15 @@ def main(argv):
 
 	f = open(parsed.transcript_cluster_list, "r")
 	lines = f.readlines()
-	tcs = []
+	tcs = set()
 	for line in lines:
 		tmp_arr = line.strip().split("\t")
 		if len(tmp_arr) > parsed.column_number:
 			for tmp_tc in tmp_arr[parsed.column_number].split(","):
-				tcs.append(tmp_tc)
+				tcs.add(tmp_tc)
 	f.close()
+	tcs = list(tcs)
+	print "Transript cluster count:", len(tcs)
 
 	expr = np.loadtxt(parsed.input_expr, dtype=str, delimiter="\t")
 	tc_indx = [0]

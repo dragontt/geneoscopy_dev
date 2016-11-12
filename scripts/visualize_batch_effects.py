@@ -3,13 +3,14 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-dir_data = "/Users/KANG/geneoscopy_dev/data/20161105_combined_project_2283_abcdefg/"
+dir_data = "/Users/KANG/geneoscopy_dev/data/20161111_combined_project_2283_abcdefgh/"
 file_expr = dir_data + "chipdata_geneset_x_valid_chips_full.txt"
-file_sample = dir_data + "sample_sheet_combined_abcdefg.two_group_no_benign.txt"
+file_sample = dir_data + "sample_sheet_combined_abcdefgh.txt"
+dir_figures = dir_data + "figures_CIViC/"
 
-bs = ["1", "2", "3", "4", "5", "6", "7"]
-labels = ["C", "N"]
-colors_arr = ["r", "g"]
+bs = ["1", "2", "3", "4", "5", "6", "7", "8"]
+labels = ["C", "N", "P"]
+colors_arr = ["r", "g", "b"]
 """
 # cg_genes = {'NDRG4':'TC16000503.hg.1', 'BMP3':'TC04000449.hg.1', 'KRAS':'TC12001314.hg.1'}
 cg_genes = {'TC6_ssto_hap7000119' : 'TC6_ssto_hap7000119.hg.1'}
@@ -24,6 +25,13 @@ for line in lines:
 		tcs = tmp[1].split(",")
 		for tc in tcs:
 			cg_genes[gene +"_"+ tc] = tc
+"""
+cg_genes = {}
+file_genes = dir_data + "training/top_de_genes.txt"
+tcs = np.loadtxt(file_genes, dtype=str, skiprows=1, usecols=[0])
+for tc in tcs:
+	cg_genes[tc] = tc
+"""
 
 expr = np.loadtxt(file_expr, dtype=str, delimiter='\t')
 meta = np.loadtxt(file_sample, dtype=str, usecols=[1,2,3], skiprows=1, delimiter='\t')
@@ -71,21 +79,22 @@ bs.append("all")
 locs = []
 for i in range(len(bs)):
 	locs += [x+i*(len(labels)+1) for x in range(len(labels))]
-colors = colors_arr*(len(bs))
 for i in range(len(labels)):
 	batch["all"+labels[i]] = []
 
 for g in cg_genes.keys():
-	plt.figure()
-	bp = plt.boxplot(gene_expr[g], positions=locs, patch_artist=True)
+	print "Plotting", g
+	plt.figure(num=None, figsize=(12, 6), dpi=80,)
+	bp = plt.boxplot(gene_expr[g], positions=locs, patch_artist=True) 
+	
+	colors = colors_arr*(len(bs))
+	empty_indx = [i for i in range(len(gene_expr[g])) if gene_expr[g][i] == []]
+	colors = np.delete(colors, empty_indx)
 	for b,c in zip(bp['boxes'], colors):
 		plt.setp(b, facecolor=c)
+	
 	plt.title(g)
 	plt.xticks(locs, sorted(batch.keys()))
 	plt.xlabel('batch + label')
 	plt.ylabel('log expression')
-	plt.savefig(dir_data+"figures/"+g+".png", format="png")
-
-	# print g, "\t", len(bp["fliers"][21].get_data()[1]) ,"\t", len(bp["fliers"][23].get_data()[1])
-
-
+	plt.savefig(dir_figures + g + ".png", format="png")
