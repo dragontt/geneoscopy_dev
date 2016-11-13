@@ -21,26 +21,27 @@ probs_cvp = []
 
 for i in range(len(lines)):
 	line = lines[i].strip().split()
+	pc, pn, pp = np.array(line[3:6], dtype=float)
 	## positive vs negative recommendation 
 	true_label = 0 if line[1] == "N" else 1
 	labels_all.append(true_label)
-	probs_all.append(1-float(line[4]))
-	# probs_all.append(float(line[3]))
+	# probs_all.append(1-pn)
+	probs_all.append(max(pc,pp) / (max(pc,pp)+pn))
 	## cancer vs normal
 	if line[1] == "N" or "C":
 		true_label = 0 if line[1] == "N" else 1
 		labels_cancer.append(true_label)
-		probs_cancer.append(float(line[3]) / (float(line[3])+float(line[4])))
+		probs_cancer.append(pc / (pc+pn))
 	## polyp vs normal
 	if line[1] == "N" or "P":
 		true_label = 0 if line[1] == "N" else 1
 		labels_polyp.append(true_label)
-		probs_polyp.append(float(line[5]) / (float(line[5])+float(line[4])))
+		probs_polyp.append(pp / (pp+pn))
 	## cancer vs polyp
 	if line[1] == "C" or "P":
 		true_label = 0 if line[1] == "P" else 1
 		labels_cvp.append(true_label)
-		probs_cvp.append(float(line[3]) / (float(line[3])+float(line[5])))
+		probs_cvp.append(pc / (pc+pp))
 
 ## plot multiple ROCs 
 fpr_all, tpr_all, thresholds_all = metrics.roc_curve(labels_all, probs_all)
