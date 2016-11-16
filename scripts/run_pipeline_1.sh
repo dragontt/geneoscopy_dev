@@ -3,8 +3,8 @@ DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 
 ##### INPUT VARIABLES #####
 
-DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcdefgh_1
-NUM_SAMPLES=177
+DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcdefghi_1
+NUM_SAMPLES=201
 GROUP=N_vs_C
 GENE_FILTER=nanostring
 THLD_QC=0.75
@@ -15,10 +15,10 @@ NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
 NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
 # GENE_FILTER_LST=${DIR_DATA}/../external_data/nanostring/PanCancer_nanostring_genes_annotated.txt 
 GENE_FILTER_LST=${DIR_DATA}/../external_data/Genecards_colon_cancer/GeneCards_Nanostring_genes_annotated.txt
-QC_TABLE=${DIR_DATA}/QC_table_combined_abcdefgh.txt
-SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefgh.two_group_no_benign.txt
+QC_TABLE=${DIR_DATA}/QC_table_combined_abcdefghi.txt
+SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefghi.two_group_no_benign.txt
 PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
-VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benign.txt
+VALID_CHIPS=${DIR_DATA}/valid_chips.two_group_no_benigni.txt
 CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
 
 ##### END OF INPUT VARIABLES #####

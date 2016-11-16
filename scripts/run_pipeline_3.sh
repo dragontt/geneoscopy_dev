@@ -3,10 +3,10 @@ DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 
 ##### INPUT VARIABLES #####
 
-DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcdefgh_3
-NUM_SAMPLES=177
+DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcdefghi_3
+NUM_SAMPLES=201
 GROUP=N_vs_P_vs_C
-GENE_FILTER=nanostring
+# GENE_FILTER=nanostring
 THLD_QC=0.7
 # THLD_PVAL=0.1
 THLD_PVAL=0.0015
@@ -14,8 +14,8 @@ THLD_FC=0
 NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
 NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
 GENE_FILTER_LST=${DIR_DATA}/../external_data/nanostring/PanCancer_nanostring_genes_annotated.txt
-QC_TABLE=${DIR_DATA}/QC_table_combined_abcdefgh.txt
-SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefgh.txt
+QC_TABLE=${DIR_DATA}/QC_table_combined_abcdefghi.txt
+SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefghi.txt
 PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
 VALID_CHIPS=${DIR_DATA}/valid_chips.txt
 CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
@@ -32,8 +32,8 @@ echo "Sample sheet:" $SAMPLE_SHEET
 echo ""
 
 echo "Filtering gene set ... "
-python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
-# NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
+# python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
+NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
 
 echo "Running quality control ... "
 python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v $VALID_CHIPS -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
@@ -46,8 +46,8 @@ python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}
 python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
 
-# THLD_PVALS=( 0.05 0.1 0.15 0.2 0.3 0.4 0.5 0.75 1 )
-THLD_PVALS=( 0.05 )
+THLD_PVALS=( 0.0001 0.0002 0.0003 0.0004 0.0005 0.0007 0.001 )
+# THLD_PVALS=( 0.000313299815241737 )
 for THLD_PVAL in "${THLD_PVALS[@]}"; do
 	echo "#################################"
 	echo "P-value threshold -->" $THLD_PVAL

@@ -5,7 +5,8 @@ from sklearn import metrics
 
 ## file IO
 dir_proj = "/Users/KANG/geneoscopy_dev/data/run_proj_abcdefgh/"
-file_pred = dir_proj + "tmp/prediction_probs.txt"
+# file_pred = dir_proj + "tmp/prediction_probs.txt"
+file_pred = dir_proj + "tmp/tmp_1.txt"
 
 f = open(file_pred, "r")
 lines = f.readlines()
@@ -26,22 +27,27 @@ for i in range(len(lines)):
 	true_label = 0 if line[1] == "N" else 1
 	labels_all.append(true_label)
 	# probs_all.append(1-pn)
-	probs_all.append(max(pc,pp) / (max(pc,pp)+pn))
+	probs_all.append(max(pc,pp))
 	## cancer vs normal
-	if line[1] == "N" or "C":
+	if line[1] in ["N", "C"]:
 		true_label = 0 if line[1] == "N" else 1
 		labels_cancer.append(true_label)
 		probs_cancer.append(pc / (pc+pn))
 	## polyp vs normal
-	if line[1] == "N" or "P":
+	if line[1] in ["N", "P"]:
 		true_label = 0 if line[1] == "N" else 1
 		labels_polyp.append(true_label)
 		probs_polyp.append(pp / (pp+pn))
 	## cancer vs polyp
-	if line[1] == "C" or "P":
+	if line[1] in ["C", "P"]:
 		true_label = 0 if line[1] == "P" else 1
 		labels_cvp.append(true_label)
 		probs_cvp.append(pc / (pc+pp))
+
+print "all", len(labels_all), "pos vs neg", [sum(labels_all), len(labels_all)-sum(labels_all)]
+print "cancer", len(labels_cancer), "pos vs neg", [sum(labels_cancer), len(labels_cancer)-sum(labels_cancer)]
+print "polyp", len(labels_polyp), "pos vs neg", [sum(labels_polyp), len(labels_polyp)-sum(labels_polyp)]
+print "cvp", len(labels_cvp), "pos vs neg", [sum(labels_cvp), len(labels_cvp)-sum(labels_cvp)]
 
 ## plot multiple ROCs 
 fpr_all, tpr_all, thresholds_all = metrics.roc_curve(labels_all, probs_all)
@@ -63,7 +69,7 @@ plt.plot(fpr_polyp, tpr_polyp, color='b', linestyle='-', lw=2,
 plt.plot(fpr_cvp, tpr_cvp, color='m', linestyle='-', lw=2, 
 	label='Cancer/Polyp (AUC = %0.2f)' % roc_auc_cvp)
 plt.plot([0, 1], [0, 1], color='k', lw=2, linestyle='--')
-plt.xlim([0.0, 1.0])
+plt.xlim([0.0, 1.05])
 plt.ylim([0.0, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
