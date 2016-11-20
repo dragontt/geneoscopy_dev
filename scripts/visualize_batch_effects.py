@@ -3,17 +3,18 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-dir_data = "/Users/KANG/geneoscopy_dev/data/20161111_combined_project_2283_abcdefgh/"
+dir_data = "/Users/KANG/geneoscopy_dev/data/20161115_combined_project_2283_abcdefghi/"
 file_expr = dir_data + "chipdata_geneset_x_valid_chips_full.txt"
-file_sample = dir_data + "sample_sheet_combined_abcdefgh.txt"
-dir_figures = dir_data + "figures_CIViC/"
+file_sample = dir_data + "sample_sheet_combined_abcdefghi.txt"
+dir_figures = dir_data + "figures_literature_genes/"
 
-bs = ["1", "2", "3", "4", "5", "6", "7", "8"]
+bs = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 labels = ["C", "N", "P"]
 colors_arr = ["r", "g", "b"]
 """
 # cg_genes = {'NDRG4':'TC16000503.hg.1', 'BMP3':'TC04000449.hg.1', 'KRAS':'TC12001314.hg.1'}
-cg_genes = {'TC6_ssto_hap7000119' : 'TC6_ssto_hap7000119.hg.1'}
+cg_genes = {'TC15002533.hg.1':'TC15002533.hg.1', 'TC09002312.hg.1':'TC09002312.hg.1','TC13000691.hg.1':'TC13000691.hg.1', 'TC19002254.hg.1':'TC19002254.hg.1', 'TC09002513.hg.1':'TC09002513.hg.1','TC04002830.hg.1':'TC04002830.hg.1'}
+"""
 """
 cg_genes = {}
 file_genes = dir_data + "../external_data/CIViC/civic_genes_TCs.txt"
@@ -26,12 +27,14 @@ for line in lines:
 		for tc in tcs:
 			cg_genes[gene +"_"+ tc] = tc
 """
+# """
 cg_genes = {}
-file_genes = dir_data + "training/top_de_genes.txt"
-tcs = np.loadtxt(file_genes, dtype=str, skiprows=1, usecols=[0])
-for tc in tcs:
-	cg_genes[tc] = tc
-"""
+file_genes = dir_data + "../run_proj_abcdefghi/training/top_de_genes.supported_by_literature.txt"
+tcs = np.loadtxt(file_genes, dtype=str, delimiter="\t")
+for i in range(len(tcs)):
+	tc, gene = tcs[i,:]
+	cg_genes[gene +"_"+ tc] = tc
+# """
 
 expr = np.loadtxt(file_expr, dtype=str, delimiter='\t')
 meta = np.loadtxt(file_sample, dtype=str, usecols=[1,2,3], skiprows=1, delimiter='\t')

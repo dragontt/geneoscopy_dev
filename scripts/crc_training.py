@@ -194,7 +194,7 @@ def main(argv):
 		## cross validation
 		# n_folds = 10
 		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		# param_range = range(1,10) ##max depth
+		# param_range = range(1,8) ##max depth
 		# # param_range = [.0005, .001, .0015, .002, .0025, .005, .0075, .01] ##learning rate
 		# accuracy_lst = []
 		# for p in param_range:
