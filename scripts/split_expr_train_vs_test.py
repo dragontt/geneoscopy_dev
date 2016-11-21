@@ -27,15 +27,21 @@ def main(argv):
 		intersected_indx.append(np.where(valid_chips[:,0] == c)[0][0])
 		
 	valid_chips = valid_chips[intersected_indx,:]
-	indx_tr = np.where(valid_chips[:,2] == "0")[0]
-	indx_te = np.where(valid_chips[:,2] == "1")[0]
+	indx_valid_chips_tr = np.where(valid_chips[:,2] == "0")[0]
+	indx_valid_chips_te = np.where(valid_chips[:,2] == "1")[0]
+	indx_tr = []
+	indx_te = []
+	for c in valid_chips[indx_valid_chips_tr, 0]:
+		indx_tr.append(np.where(expr[0,:] == c)[0][0])
+	for c in valid_chips[indx_valid_chips_te, 0]:
+		indx_te.append(np.where(expr[0,:] == c)[0][0])
 
 	np.savetxt(parsed.train_expr, np.hstack((rownames, expr[:,indx_tr])), fmt="%s", delimiter="\t")
 	if parsed.train_valid_chips != None:
-		np.savetxt(parsed.train_valid_chips, valid_chips[indx_tr,:], fmt="%s", delimiter="\t")
+		np.savetxt(parsed.train_valid_chips, valid_chips[indx_valid_chips_tr,:], fmt="%s", delimiter="\t")
 	np.savetxt(parsed.test_expr, np.hstack((rownames, expr[:,indx_te])), fmt="%s", delimiter="\t")
 	if parsed.test_valid_chips != None:
-		np.savetxt(parsed.test_valid_chips, valid_chips[indx_te,:], fmt="%s", delimiter="\t")
+		np.savetxt(parsed.test_valid_chips, valid_chips[indx_valid_chips_te,:], fmt="%s", delimiter="\t")
 
 if __name__ == "__main__":
     main(sys.argv)
