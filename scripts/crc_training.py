@@ -218,7 +218,7 @@ def main(argv):
 
 		## train the model
 		# clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)
-		clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)
+		clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=0.5, verbose=False)
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		accuracy_pred = clf.score(expr_tr, label_tr)
@@ -256,10 +256,12 @@ def main(argv):
 		# 	print("\t".join([sample_id[i], label_tr[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
 		
 
-	##### Stochastic gradient boosting #####
-	elif parsed.learning_algorithm.lower() == 'stochastic_grad_boosting':
-		from sklearn.linear_model import SGDClassifier
-		clf = SGDClassifier(loss='hinge', penalty='l1', alpha=.0001, learning_rate='optimal', class_weight='balanced', verbose=0)
+
+	##### AdaBoost #####
+	elif parsed.learning_algorithm.lower() == "adaboost":
+		from sklearn.ensemble import AdaBoostClassifier
+		from sklearn.tree import DecisionTreeClassifier
+		clf = AdaBoostClassifier(DecisionTreeClassifier(max_depth=3), n_estimators=1000, learning_rate=.0025, algorithm="SAMME")
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		accuracy_pred = clf.score(expr_tr, label_tr)

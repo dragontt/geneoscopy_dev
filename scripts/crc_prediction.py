@@ -152,6 +152,24 @@ def main(argv):
 		print "Prediction accuracy:", accuracy_predicted
 
 
+	##### AdaBoost #####
+	elif parsed.learning_algorithm.lower() == "adaboost":
+		from sklearn.ensemble import AdaBoostClassifier
+		from sklearn.tree import DecisionTreeClassifier
+
+		# predict on validation set
+		clf = joblib.load(parsed.model_filename)
+		label_predicted = clf.predict(expr_te)
+		probability_predicted = clf.predict_proba(expr_te)
+		accuracy_predicted = clf.score(expr_te, label_te)
+		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
+		
+		#print messages
+		print "sample_id true_label predict_label", clf.classes_
+		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
+		print "Prediction accuracy:", accuracy_predicted
+
+
 
 	##### Gaussian Process #####
 	elif parsed.learning_algorithm.lower() == 'gauss_process':
