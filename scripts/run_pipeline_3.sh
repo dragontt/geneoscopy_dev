@@ -4,20 +4,20 @@ DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 ##### INPUT VARIABLES #####
 
 DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcdefghi_3
-NUM_SAMPLES=201
-GROUP=N_vs_C
+NUM_SAMPLES=107
+GROUP=N_vs_P_vs_C
 GENE_FILTER=genecards_nanostring_civic
 THLD_QC=0.7
 # THLD_PVAL=0.1
 THLD_PVAL=0.0015
 THLD_FC=0
-NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.txt
+NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.new_protocol.txt
 NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
-# GENE_FILTER_LST=${DIR_DATA}/../external_data/Genecards_colon_cancer/GeneCards_Nanostring_CIViC_genes_annotated.txt 
+GENE_FILTER_LST=${DIR_DATA}/../external_data/Genecards_colon_cancer/GeneCards_Nanostring_CIViC_genes_annotated.txt 
 QC_TABLE=${DIR_DATA}/QC_table_combined_abcdefghi.txt
-SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefghi.two_group.txt
+SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefghi.txt
 PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
-VALID_CHIPS=${DIR_DATA}/valid_chips.new_protocol.two_group.txt
+VALID_CHIPS=${DIR_DATA}/valid_chips.new_protocol.txt
 CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
 
 ##### END OF INPUT VARIABLES #####
@@ -46,8 +46,8 @@ python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}
 python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
 
-# THLD_PVALS=( 0.0035 0.004 0.0045 0.005 0.0055 0.006 0.0065 )
-THLD_PVALS=( 0.005 )
+THLD_PVALS=( 0.0001 0.0025 0.005 0.0075 0.01 )
+# THLD_PVALS=( 0.05 )
 for THLD_PVAL in "${THLD_PVALS[@]}"; do
 	echo "#################################"
 	echo "P-value threshold -->" $THLD_PVAL

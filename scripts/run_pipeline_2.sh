@@ -5,7 +5,7 @@ DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 
 DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_abcdefghi_2
 NUM_SAMPLES=178
-GROUP=N_vs_C
+GROUP=N_vs_P_vs_C
 GENE_FILTER=genecards_nanostring_civic
 THLD_QC=0.7
 THLD_PVAL=0.04
@@ -16,9 +16,9 @@ NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.t
 # GENE_FILTER_LST=${DIR_DATA}/../external_data/Genecards_colon_cancer/GeneCards_Nanostring_genes_annotated.txt  
 GENE_FILTER_LST=${DIR_DATA}/../external_data/Genecards_colon_cancer/GeneCards_Nanostring_CIViC_genes_annotated.txt 
 QC_TABLE=${DIR_DATA}/QC_table_combined_abcdefghi.txt
-SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefghi.two_group.txt
+SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefghi.txt
 PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
-VALID_CHIPS=${DIR_DATA}/valid_chips.two_group.txt
+VALID_CHIPS=${DIR_DATA}/valid_chips.txt
 CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
 
 ##### END OF INPUT VARIABLES #####
@@ -46,8 +46,8 @@ mkdir -p ${DIR_DATA}/testing
 python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
 python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
-THLD_PVALS=( 0.001 0.00125 0.0015 0.00175 0.002 0.00225 0.0025 )
-# THLD_PVALS=( 0.005 )
+# THLD_PVALS=( 0.0005 0.001 0.00125 0.0015 0.00175 0.002 0.0025 0.003 0.0035 0.004 0.0045 0.005 )
+THLD_PVALS=( 0.005 )
 for THLD_PVAL in "${THLD_PVALS[@]}"; do
 	echo "#################################"
 	echo "P-value threshold -->" $THLD_PVAL
@@ -63,7 +63,7 @@ for THLD_PVAL in "${THLD_PVALS[@]}"; do
 	echo ""
 
 	# ML_MODELS=(random_forest svm neural_net grad_boosting gauss_process)
-	ML_MODELS=(grad_boosting)
+	ML_MODELS=(stochastic_grad_boosting)
 	for ML_MODEL in "${ML_MODELS[@]}"; do
 		echo "###" $ML_MODEL "###"
 		

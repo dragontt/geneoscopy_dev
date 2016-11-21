@@ -256,6 +256,18 @@ def main(argv):
 		# 	print("\t".join([sample_id[i], label_tr[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
 		
 
+	##### Stochastic gradient boosting #####
+	elif parsed.learning_algorithm.lower() == 'stochastic_grad_boosting':
+		from sklearn.linear_model import SGDClassifier
+		clf = SGDClassifier(loss='hinge', penalty='l1', alpha=.0001, learning_rate='optimal', class_weight='balanced', verbose=0)
+		clf.fit(expr_tr, label_tr)
+		label_pred = clf.predict(expr_tr)
+		accuracy_pred = clf.score(expr_tr, label_tr)
+		print "Training accuracy:", clf.score(expr_tr, label_tr)
+		if parsed.output_directory != None:
+			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
+
+
 	##### Gaussian Process #####
 	elif parsed.learning_algorithm.lower() == 'gauss_process':
 		from sklearn.gaussian_process import GaussianProcessClassifier
