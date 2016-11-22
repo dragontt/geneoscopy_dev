@@ -29,10 +29,10 @@ for line in lines:
 """
 # """
 cg_genes = {}
-file_genes = dir_data + "../run_proj_abcdefghi/training/top_de_genes.supported_by_literature.txt"
-tcs = np.loadtxt(file_genes, dtype=str, delimiter="\t")
+file_genes = dir_data + "../run_proj_abcdefghi_2/training/top_de_genes.supported_by_literatures.txt"
+tcs = np.loadtxt(file_genes, dtype=str, delimiter="\t", usecols=[0,1])
 for i in range(len(tcs)):
-	tc, gene = tcs[i,:]
+	gene,tc = tcs[i,:]
 	cg_genes[gene +"_"+ tc] = tc
 # """
 

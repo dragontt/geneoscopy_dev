@@ -191,11 +191,12 @@ def main(argv):
 		from sklearn.ensemble import GradientBoostingClassifier
 
 		optimal_param = 3
-		## cross validation
+		# ## cross validation
 		# n_folds = 10
 		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		# param_range = range(1,8) ##max depth
+		# # param_range = range(1,8) ##max depth
 		# # param_range = [.0005, .001, .0015, .002, .0025, .005, .0075, .01] ##learning rate
+		# # param_range = np.arange(.1,1,.1) ##stochastic process
 		# accuracy_lst = []
 		# for p in param_range:
 		# 	print "Running cross valdiation ... p =", p
@@ -218,7 +219,7 @@ def main(argv):
 
 		## train the model
 		# clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)
-		clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=0.5, verbose=False)
+		clf = GradientBoostingClassifier(learning_rate=.01, n_estimators=1000, max_depth=optimal_param, subsample=0.8, verbose=False)
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		accuracy_pred = clf.score(expr_tr, label_tr)
