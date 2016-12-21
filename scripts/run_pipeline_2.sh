@@ -23,28 +23,28 @@ CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
 
 ##### END OF INPUT VARIABLES #####
 
-echo "Num of total samples:" $NUM_SAMPLES
-echo "Label groups:" $GROUP
-echo "DE p-value treshold:" $THLD_PVAL
-echo "DE fold change threshold:" $THLD_FC
-echo "Normalized expr data:" $NORMALIZED_CHIPDATA
-echo "QC table:" $QC_TABLE
-echo "Sample sheet:" $SAMPLE_SHEET
-echo ""
+# echo "Num of total samples:" $NUM_SAMPLES
+# echo "Label groups:" $GROUP
+# echo "DE p-value treshold:" $THLD_PVAL
+# echo "DE fold change threshold:" $THLD_FC
+# echo "Normalized expr data:" $NORMALIZED_CHIPDATA
+# echo "QC table:" $QC_TABLE
+# echo "Sample sheet:" $SAMPLE_SHEET
+# echo ""
 
-echo "Filtering gene set ... "
-python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
-# NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
+# echo "Filtering gene set ... "
+# python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
+# # NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
 
-echo "Running quality control ... "
-python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v $VALID_CHIPS -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
-python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA_FULL -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
+# echo "Running quality control ... "
+# python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v $VALID_CHIPS -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
+# python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA_FULL -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
 
-echo "Splitting training/testing sets ... "
-mkdir -p ${DIR_DATA}/training
-mkdir -p ${DIR_DATA}/testing
-python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
-python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
+# echo "Splitting training/testing sets ... "
+# mkdir -p ${DIR_DATA}/training
+# mkdir -p ${DIR_DATA}/testing
+# python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
+# python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
 # THLD_PVALS=( 0.00005 0.000075 0.0001 0.000125 0.00015 0.000175 0.0002 0.00025 0.0003 0.00035 0.0004 0.00045 0.0005 )
 THLD_PVALS=( 0.001 )

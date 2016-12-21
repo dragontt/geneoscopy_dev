@@ -29,17 +29,19 @@ expr_pca <- prcomp(t(expr_data))
 
 ## Plot 3d pca
 plot3d(expr_pca$x,xlab="PC1",ylab="PC2",zlab="PC3",type="h")
-# spheres3d(expr_pca$expr_data, radius=3, col=rainbow(length(expr_pca$ex[,1])))
-# colors <- list(n='chartreuse3', p='goldenrod1', c='firebrick1')
-# label_colors <- c(rep(colors$n,5), colors$p, rep(colors$c,4), colors$p, colors$p)
-colors <- list('0'='chartreuse3', '1'='firebrick1')
+## spheres3d(expr_pca$expr_data, radius=3, col=rainbow(length(expr_pca$ex[,1])))
+## colors <- list(n='chartreuse3', p='goldenrod1', c='firebrick1')
+## label_colors <- c(rep(colors$n,5), colors$p, rep(colors$c,4), colors$p, colors$p)
+
+# colors <- list('0'='chartreuse3', '1'='firebrick1')
+colors <- list('0'='chartreuse3', '1'='blue', '2'='firebrick1')
 labels <- read.table(file_sample_labels, sep="\t", colClasses=c("NULL","character","NULL"))
 label_colors <- c()
 for (i in 1:dim(labels)[1]){
 	label <- labels[i,1]
 	label_colors <- c(label_colors, colors[[label]])
 }
-spheres3d(expr_pca$x, radius=.25, col=label_colors)
+spheres3d(expr_pca$x, radius=.05, col=label_colors)
 grid3d(side="z", at=list(z=0))
 # text3d(expr_pca$x, text=rownames(expr_pca$x), adj=1.3)
 

@@ -23,47 +23,47 @@ CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
 
 ##### END OF INPUT VARIABLES #####
 
-echo "Num of total samples:" $NUM_SAMPLES
-echo "Label groups:" $GROUP
-echo "DE p-value treshold:" $THLD_PVAL
-echo "DE fold change threshold:" $THLD_FC
-echo "Normalized expr data:" $NORMALIZED_CHIPDATA
-echo "QC table:" $QC_TABLE
-echo "Sample sheet:" $SAMPLE_SHEET
-echo ""
+# echo "Num of total samples:" $NUM_SAMPLES
+# echo "Label groups:" $GROUP
+# echo "DE p-value treshold:" $THLD_PVAL
+# echo "DE fold change threshold:" $THLD_FC
+# echo "Normalized expr data:" $NORMALIZED_CHIPDATA
+# echo "QC table:" $QC_TABLE
+# echo "Sample sheet:" $SAMPLE_SHEET
+# echo ""
 
-echo "Filtering gene set ... "
-python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
-# NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
+# echo "Filtering gene set ... "
+# python ${DIR_SCRIPTS}/filter_gene_set.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o $NORMALIZED_CHIPDATA
+# # NORMALIZED_CHIPDATA=$NORMALIZED_CHIPDATA_FULL
 
-echo "Running quality control ... "
-python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v $VALID_CHIPS -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
-python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA_FULL -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
+# echo "Running quality control ... "
+# python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v $VALID_CHIPS -o ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
+# python ${DIR_SCRIPTS}/quality_control.py -n $NUM_SAMPLES -g $GROUP -d $NORMALIZED_CHIPDATA_FULL -q $QC_TABLE -s $SAMPLE_SHEET -t $THLD_QC -v foo -o ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
 
-echo "Splitting training/testing sets ... "
-mkdir -p ${DIR_DATA}/training
-mkdir -p ${DIR_DATA}/testing
-python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
-python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
+# echo "Splitting training/testing sets ... "
+# mkdir -p ${DIR_DATA}/training
+# mkdir -p ${DIR_DATA}/testing
+# python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
+# python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
 # THLD_PVALS=( 0.0005 0.001 0.0015 0.002 0.0025 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 )
 THLD_PVALS=( 0.001 )
 for THLD_PVAL in "${THLD_PVALS[@]}"; do
-	echo "#################################"
-	echo "P-value threshold -->" $THLD_PVAL
-	echo "#################################"
-	echo ""
+	# echo "#################################"
+	# echo "P-value threshold -->" $THLD_PVAL
+	# echo "#################################"
+	# echo ""
 
-	echo "Analyzing DE genes ... "
-	Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP $THLD_PVAL $THLD_FC ${DIR_DATA}/training/top_de_genes.txt
+	# echo "Analyzing DE genes ... "
+	# Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP $THLD_PVAL $THLD_FC ${DIR_DATA}/training/top_de_genes.txt
 
 	### python ${DIR_SCRIPTS}/de_analysis_sd.py ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt ${DIR_DATA}/training/top_de_genes.txt
 	NUM_TOP_GENES=$(( $( wc -l ${DIR_DATA}/training/top_de_genes.txt | awk '{print $1}') - 1 ))
 	echo $NUM_TOP_GENES "DE genes found"
 	echo ""
 
-	# ML_MODELS=(random_forest svm neural_net grad_boosting gauss_process)
-	ML_MODELS=(grad_boosting)
+	# ML_MODELS=(random_forest svm neural_net grad_boosting adaboost gauss_process)
+	ML_MODELS=(random_forest)
 	for ML_MODEL in "${ML_MODELS[@]}"; do
 		echo "###" $ML_MODEL "###"
 		

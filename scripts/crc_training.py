@@ -1,4 +1,4 @@
-#/usr/bin/python
+#!/usr/bin/python
 import sys
 import os
 import argparse
@@ -141,7 +141,7 @@ def main(argv):
 		from sklearn.ensemble import RandomForestClassifier
 		
 		# train the model
-		clf = RandomForestClassifier(n_estimators=1000, n_jobs=1, criterion="entropy", oob_score=True, class_weight=None, verbose=False)
+		clf = RandomForestClassifier(n_estimators=1000, n_jobs=5, criterion="entropy", oob_score=True, class_weight="balanced", verbose=False)
 		clf.fit(expr_tr, label_tr)
 		if parsed.output_directory != None:
 			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
@@ -262,7 +262,7 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == "adaboost":
 		from sklearn.ensemble import AdaBoostClassifier
 		from sklearn.tree import DecisionTreeClassifier
-		clf = AdaBoostClassifier(DecisionTreeClassifier(max_depth=3), n_estimators=1000, learning_rate=.0025, algorithm="SAMME")
+		clf = AdaBoostClassifier(DecisionTreeClassifier(max_depth=3), n_estimators=1000, learning_rate=.0025)
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		accuracy_pred = clf.score(expr_tr, label_tr)
