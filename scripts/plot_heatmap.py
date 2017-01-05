@@ -58,7 +58,7 @@ def main(argv):
 
 	## Transform from log2 to regular expr values
 	expr = np.array(raw_data[1:, 1:], dtype=float)
-	expr = np.power(2, expr)
+	# expr = np.power(2, expr)
 
 	## Parse CONTROL sample label
 	label = np.empty(len(sample_id), dtype=str)
