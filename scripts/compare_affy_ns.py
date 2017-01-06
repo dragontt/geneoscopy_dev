@@ -14,6 +14,8 @@ def parse_args(argv):
 	parser.add_argument('-n', '--nanostring', dest='nanostring')
 	parser.add_argument('-s', '--sample_conversion', dest='sample_conversion')
 	parser.add_argument('-g', '--gene_conversion', dest='gene_conversion')
+	parser.add_argument('-t', '--analysis_type', dest='analysis_type',
+		choices=['per_gene', 'per_sample'])
 	parser.add_argument('-o', '--output_filename', dest='output_filename')
 	parsed = parser.parse_args(argv[1:])
 	return parsed
@@ -64,46 +66,87 @@ def main(argv):
 		ns_sample_indx.append(np.where(chip_expr[0,:] == ns2chip[ns_expr[0,i]])[0][0])
 	chip_expr = chip_expr[:,ns_sample_indx]
 
-	##compute pearson correlation of the compared platforms for each gene
+	##take intersection of two gene sets, and average the TCs belonging to the same gene 
 	genes = []
-	correlations = []
+	ns_expr_new = []
+	chip_expr_new = []
 	for i in range(1,ns_expr.shape[0]):
 		gene = ns_expr[i,0]
 		ns_expr_i = np.array(ns_expr[i,1:], dtype=float)
 
-		tc_indx = []
 		if gene in gene2tc.keys():
+			tc_indx = []
 			for tc in gene2tc[gene]:
 				tc_indx.append(np.where(chip_expr[:,0] == tc)[0][0])
 			chip_expr_i = np.array(chip_expr[tc_indx,1:], dtype=float)
 			chip_expr_i = np.power(2, chip_expr_i) #since microarray expr are in log2
 			chip_expr_i = np.mean(chip_expr_i, axis=0)
-			chip_expr_i = np.log2(chip_expr_i)
+			# chip_expr_i = np.log2(chip_expr_i)
 
-			correlations.append(list(pearsonr(ns_expr_i, chip_expr_i)))
-			# correlations.append(list(spearmanr(ns_expr_i, chip_expr_i)))
 			genes.append(gene)
-
-			if gene == "NFKBIA":
-				print ns_expr_i
-				print chip_expr_i
-	correlations = np.array(correlations)
+			ns_expr_new.append(ns_expr_i)
+			chip_expr_new.append(chip_expr_i)
 	genes = np.array(genes)
+	ns_expr_new = np.array(ns_expr_new)
+	chip_expr_new = np.array(chip_expr_new)
 
-	##sort the correlations
-	indx_sorted = np.argsort(correlations[:,0])[::-1]
-	correlations = correlations[indx_sorted,]
-	genes = genes[indx_sorted]
 
-	out = np.hstack((genes[np.newaxis].T, correlations))
-	# print out
-	np.savetxt(parsed.output_filename+".txt", out, fmt="%s", delimiter="\t")
+	if parsed.analysis_type == 'per_gene':
+		##for each gene, compute correlation of all samples
+		correlations = []
+		for i in range(len(genes)):
+			ns_expr_i = ns_expr_new[i,]
+			chip_expr_i = chip_expr_new[i,]
+			corr = pearsonr(ns_expr_i, chip_expr_i)
+			# corr = spearmanr(ns_expr_i, chip_expr_i)
+			correlations.append(list(corr))
+		correlations = np.array(correlations)
+
+		##sort the correlations
+		indx_sorted = np.argsort(correlations[:,0])[::-1]
+		correlations = correlations[indx_sorted,]
+		genes = genes[indx_sorted]
+
+		out = np.hstack((genes[np.newaxis].T, correlations))
+		np.savetxt(parsed.output_filename+".txt", out, fmt="%s", delimiter="\t")
+
+
+	elif parsed.analysis_type == 'per_sample':
+		##for each sample, compute correlation of all genes
+		samples = np.array(['_'.join([chip_expr[0,i],ns_expr[0,i]]) 
+			for i in range(1,chip_expr.shape[1])])
+		
+		correlations = []
+		for j in range(len(samples)):
+			ns_expr_j = ns_expr_new[:,j]
+			chip_expr_j = chip_expr_new[:,j]
+			corr = pearsonr(ns_expr_j, chip_expr_j)
+			# corr = spearmanr(ns_expr_j, chip_expr_j)
+			correlations.append(list(corr))
+
+			# print samples[j]
+			# if samples[j] == '27562_NS44':
+			# 	plt.scatter(ns_expr_j, chip_expr_j)
+			# 	plt.show()
+			
+		correlations = np.array(correlations)
+
+		##sort the correlations
+		indx_sorted = np.argsort(correlations[:,0])[::-1]
+		correlations = correlations[indx_sorted,]
+		samples = samples[indx_sorted]
+
+		out = np.hstack((samples[np.newaxis].T, correlations))
+		np.savetxt(parsed.output_filename+".txt", out, fmt="%s", delimiter="\t")
+
+	else:
+		sys.exit("Unknown analysis type!")
 
 	##plot histogram
 	x = correlations[:,0][np.invert(np.isnan(correlations[:,0]))]
-	plt.hist(x, bins=np.arange(-1.,1.,.05), facecolor='blue', alpha=0.75)
-	plt.xlabel('Pearson correlation')
-	# plt.xlabel('Spearman correlation')
+	plt.hist(x, bins=np.arange(-1.,1.,.01), facecolor='blue', alpha=0.75)
+	# plt.xlabel('Pearson correlation')
+	plt.xlabel('Spearman correlation')
 	plt.ylabel('Count')
 	plt.show()
 
