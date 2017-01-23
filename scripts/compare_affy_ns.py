@@ -16,9 +16,18 @@ def parse_args(argv):
 	parser.add_argument('-g', '--gene_conversion', dest='gene_conversion')
 	parser.add_argument('-t', '--analysis_type', dest='analysis_type',
 		choices=['per_gene', 'per_sample'])
+	parser.add_argument('-d', '--de_gene_list', dest='de_gene_list')
 	parser.add_argument('-o', '--output_filename', dest='output_filename')
 	parsed = parser.parse_args(argv[1:])
 	return parsed
+
+
+def parse_de_gene_list(file_de_data, thld_abslog2fc, thld_pval):
+	de_data = np.loadtxt(file_de_data, dtype=str)
+	indx_1 = np.where(np.abs(np.array(de_data[:,1], dtype=float)) > thld_abslog2fc)[0]
+	indx_2 = np.where(np.array(de_data[:,2], dtype=float) < thld_pval)[0]
+	indx_intersected = np.intersect1d(indx_1, indx_2)
+	return de_data[indx_intersected, 0]
 
 
 def main(argv):
@@ -64,9 +73,25 @@ def main(argv):
 	ns_sample_indx = [0]
 	for i in range(1,ns_expr.shape[1]):
 		ns_sample_indx.append(np.where(chip_expr[0,:] == ns2chip[ns_expr[0,i]])[0][0])
+
+	import random
+	random.shuffle(ns_sample_indx)
+	print ns_sample_indx
+
 	chip_expr = chip_expr[:,ns_sample_indx]
 
-	##take intersection of two gene sets, and average the TCs belonging to the same gene 
+
+	##use DE genes identified from Nanostring data
+	if parsed.de_gene_list != None:
+		thld_abslog2fc = .75
+		thld_pval = 1
+		ns_de_genes = parse_de_gene_list(parsed.de_gene_list, thld_abslog2fc, thld_pval)
+		print "Nanostring DE gene count:", len(ns_de_genes)
+	else:
+		ns_de_genes = ns_expr[:,0]
+
+
+	##take intersection of two gene sets, and average the TCs belonging to the same gene
 	genes = []
 	ns_expr_new = []
 	chip_expr_new = []
@@ -74,7 +99,7 @@ def main(argv):
 		gene = ns_expr[i,0]
 		ns_expr_i = np.array(ns_expr[i,1:], dtype=float)
 
-		if gene in gene2tc.keys():
+		if (gene in gene2tc.keys()) and (gene in ns_de_genes):
 			tc_indx = []
 			for tc in gene2tc[gene]:
 				tc_indx.append(np.where(chip_expr[:,0] == tc)[0][0])
@@ -89,7 +114,6 @@ def main(argv):
 	genes = np.array(genes)
 	ns_expr_new = np.array(ns_expr_new)
 	chip_expr_new = np.array(chip_expr_new)
-
 
 	if parsed.analysis_type == 'per_gene':
 		##for each gene, compute correlation of all samples
@@ -126,9 +150,11 @@ def main(argv):
 
 			# print samples[j]
 			# if samples[j] == '27562_NS44':
-			# 	plt.scatter(ns_expr_j, chip_expr_j)
+			# 	indx = np.where(ns_expr_j > 10)[0]
+			# 	print len(indx), len(ns_expr_j)
+			# 	plt.scatter(ns_expr_j[indx], chip_expr_j[indx])
 			# 	plt.show()
-			
+
 		correlations = np.array(correlations)
 
 		##sort the correlations
@@ -142,11 +168,12 @@ def main(argv):
 	else:
 		sys.exit("Unknown analysis type!")
 
+
 	##plot histogram
 	x = correlations[:,0][np.invert(np.isnan(correlations[:,0]))]
-	plt.hist(x, bins=np.arange(-1.,1.,.01), facecolor='blue', alpha=0.75)
-	# plt.xlabel('Pearson correlation')
-	plt.xlabel('Spearman correlation')
+	plt.hist(x, bins=np.arange(-1.,1.,.05), facecolor='blue', alpha=0.75)
+	plt.xlabel('Pearson correlation')
+	# plt.xlabel('Spearman correlation')
 	plt.ylabel('Count')
 	plt.show()
 

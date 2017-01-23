@@ -55,7 +55,7 @@ for i in {1..10}; do
 done
 
 
-NUM_TOP_GENES_LIST=( 400 )
+NUM_TOP_GENES_LIST=( 400 400 400 400 400 )
 for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 	echo "#################################"
 	echo "top genes -->" $NUM_TOP_GENES
