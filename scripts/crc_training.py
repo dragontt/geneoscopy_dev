@@ -108,6 +108,22 @@ def subsample_label_group(sample_id, expr, labels):
 	return (sample_id, expr, labels)
 
 
+def calculate_confusion_matrix(label_te, label_pred):
+	pred_pos = np.append(np.where(label_pred == "C")[0], np.where(label_pred == "P")[0])
+	pred_neg = np.where(label_pred == "N")[0]
+	te_pos = np.append(np.where(label_te == "C")[0], np.where(label_te == "P")[0])
+	te_neg = np.where(label_te == "N")[0]
+	tps = len(np.intersect1d(pred_pos, te_pos)) 
+	fps = len(np.intersect1d(pred_pos, te_neg)) 
+	fns = len(np.intersect1d(pred_neg, te_pos))
+	tns = len(np.intersect1d(pred_neg, te_neg))
+	print tps, fps, fns, tns
+	sens = tps/float(len(te_pos))
+	spec = tns/float(len(te_neg))
+	accu = (tps+tns)/float(len(label_te))
+	return [sens, spec, accu]
+
+
 def main(argv):
 	# parse data
 	parsed = parse_args(argv)
@@ -191,10 +207,11 @@ def main(argv):
 		from sklearn.ensemble import GradientBoostingClassifier
 
 		optimal_param = 3
+
 		# ## cross validation
 		# n_folds = 10
 		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		# # param_range = range(1,8) ##max depth
+		# param_range = range(1,8) ##max depth
 		# # param_range = [.0005, .001, .0015, .002, .0025, .005, .0075, .01] ##learning rate
 		# # param_range = np.arange(.1,1,.1) ##stochastic process
 		# accuracy_lst = []
@@ -210,7 +227,8 @@ def main(argv):
 		# 		label_tr1 = label_tr_cv[i]
 		# 		clf.fit(expr_tr0, label_tr0)
 		# 		label_pred = clf.predict(expr_tr1)
-		# 		accuracy_pred = clf.score(expr_tr, label_tr)
+		# 		# accuracy_pred = clf.score(expr_tr, label_tr)
+		# 		[foo, foo, accuracy_pred] = calculate_confusion_matrix(label_tr1, label_pred)
 		# 		accuracy_sum += accuracy_pred
 		# 	accuracy_lst.append(accuracy_sum/float(n_folds))
 		# 	print "   Average accuracy:", accuracy_sum/float(n_folds)
@@ -218,8 +236,9 @@ def main(argv):
 		# print "Optimal param:", optimal_param
 
 		## train the model
-		# clf = GradientBoostingClassifier(loss='exponential', learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)
+		# clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)
 		clf = GradientBoostingClassifier(learning_rate=.01, n_estimators=1000, max_depth=optimal_param, subsample=0.8, verbose=False)
+
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		accuracy_pred = clf.score(expr_tr, label_tr)

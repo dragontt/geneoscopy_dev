@@ -51,6 +51,22 @@ def parse_normal_stats(filename):
 	return stats_dict
 
 
+def calculate_confusion_matrix(label_te, label_pred):
+	pred_pos = np.append(np.where(label_pred == "C")[0], np.where(label_pred == "P")[0])
+	pred_neg = np.where(label_pred == "N")[0]
+	te_pos = np.append(np.where(label_te == "C")[0], np.where(label_te == "P")[0])
+	te_neg = np.where(label_te == "N")[0]
+	tps = len(np.intersect1d(pred_pos, te_pos)) 
+	fps = len(np.intersect1d(pred_pos, te_neg)) 
+	fns = len(np.intersect1d(pred_neg, te_pos))
+	tns = len(np.intersect1d(pred_neg, te_neg))
+	print tps, fps, fns, tns
+	sens = tps/float(len(te_pos))
+	spec = tns/float(len(te_neg))
+	accu = (tps+tns)/float(len(label_te))
+	return [sens, spec, accu]
+
+
 def main(argv):
 	# parse data
 	parsed = parse_args(argv)
@@ -78,8 +94,10 @@ def main(argv):
 
 		# print messages
 		print "sample_id true_label predict_label", clf.classes_
-		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
+		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
 		print "Prediction accuracy:", accuracy_predicted
+		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+		print "Sens",sens, "Spec",spec, "Accu",accu
 
 
 	##### SVM #####
@@ -95,8 +113,10 @@ def main(argv):
 
 		# print message 
 		print "sample_id true_label predict_label", clf.classes_
-		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
+		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
 		print "Prediction accuracy:", accuracy_predicted
+		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+		print "Sens",sens, "Spec",spec, "Accu",accu
 
 
 	##### Neural Network #####
@@ -110,6 +130,8 @@ def main(argv):
 
 		# print message 
 		print "Prediction accuracy:", accuracy_predicted
+		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+		print "Sens",sens, "Spec",spec, "Accu",accu
 
 
 	##### Gradient Boosting #####
@@ -147,9 +169,11 @@ def main(argv):
 		# 	print("\t".join( [sample_id[i], label_te[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
 
 		#print messages
-		print "sample_id true_label predict_label", clf.classes_
-		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
+		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
 		print "Prediction accuracy:", accuracy_predicted
+		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+		print "Sens",sens, "Spec",spec, "Accu",accu
 
 
 	##### AdaBoost #####
@@ -166,9 +190,10 @@ def main(argv):
 		
 		#print messages
 		print "sample_id true_label predict_label", clf.classes_
-		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
+		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
 		print "Prediction accuracy:", accuracy_predicted
-
+		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+		print "Sens",sens, "Spec",spec, "Accu",accu
 
 
 	##### Gaussian Process #####
@@ -185,8 +210,10 @@ def main(argv):
 
 		# print messages
 		print "sample_id true_label predict_label", clf.classes_
-		print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
+		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
 		print "Prediction accuracy:", accuracy_predicted
+		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+		print "Sens",sens, "Spec",spec, "Accu",accu
 
 	else:
 		sys.exit('Improper learning algorithm option given.')

@@ -16,7 +16,8 @@ def parse_args(argv):
 	parser.add_argument('-g', '--gene_conversion', dest='gene_conversion')
 	parser.add_argument('-t', '--analysis_type', dest='analysis_type',
 		choices=['per_gene', 'per_sample'])
-	parser.add_argument('-d', '--de_gene_list', dest='de_gene_list')
+	parser.add_argument('-dn', '--ns_de_gene_list', dest='ns_de_gene_list')
+	parser.add_argument('-dm', '--chip_de_gene_list', dest='chip_de_gene_list')
 	parser.add_argument('-o', '--output_filename', dest='output_filename')
 	parsed = parser.parse_args(argv[1:])
 	return parsed
@@ -49,9 +50,13 @@ def main(argv):
 	conv_data = np.loadtxt(parsed.gene_conversion, 
 		dtype=str, delimiter="\t", usecols=[1,2])
 	gene2tc = {}
+	tc2gene = {}
 	for i in range(len(conv_data)):
 		tcs = conv_data[i,1].split(",")
 		gene2tc[conv_data[i,0]] = [tc for tc in tcs if tc in chip_expr[1:,0]]
+		if len(conv_data[i,:]) > 1:
+			for tc in tcs:
+				tc2gene[tc] = conv_data[i,0]
 
 	##remove nanostring samples not in microarray data
 	valid_ns_sample_indx = [0]
@@ -74,19 +79,32 @@ def main(argv):
 	for i in range(1,ns_expr.shape[1]):
 		ns_sample_indx.append(np.where(chip_expr[0,:] == ns2chip[ns_expr[0,i]])[0][0])
 
-	import random
-	random.shuffle(ns_sample_indx)
-	print ns_sample_indx
+	# import random
+	# random.shuffle(ns_sample_indx)
+	# print ns_sample_indx
 
 	chip_expr = chip_expr[:,ns_sample_indx]
 
 
 	##use DE genes identified from Nanostring data
-	if parsed.de_gene_list != None:
-		thld_abslog2fc = .75
-		thld_pval = 1
-		ns_de_genes = parse_de_gene_list(parsed.de_gene_list, thld_abslog2fc, thld_pval)
-		print "Nanostring DE gene count:", len(ns_de_genes)
+	if parsed.ns_de_gene_list != None:
+		thld_abslog2fc = .6
+		thld_pval = .1
+		# thld_abslog2fc = 0
+		# thld_pval = 1
+		ns_de_genes = parse_de_gene_list(parsed.ns_de_gene_list, thld_abslog2fc, thld_pval)
+		ns_de_genes = np.array(ns_de_genes)
+
+		print "Nanostring DE genes:", len(ns_de_genes)
+
+		if parsed.chip_de_gene_list != None:
+			chip_de_genes = np.loadtxt(parsed.chip_de_gene_list, dtype=str, skiprows=1, usecols=[0])
+			for i in range(len(chip_de_genes)):
+				if chip_de_genes[i] in tc2gene.keys():
+					chip_de_genes[i] = tc2gene[chip_de_genes[i]]
+			ns_de_genes = np.intersect1d(ns_de_genes, chip_de_genes)
+
+			print "Nanostring DE genes supported Affy DE genes:", len(ns_de_genes)
 	else:
 		ns_de_genes = ns_expr[:,0]
 
@@ -147,14 +165,6 @@ def main(argv):
 			corr = pearsonr(ns_expr_j, chip_expr_j)
 			# corr = spearmanr(ns_expr_j, chip_expr_j)
 			correlations.append(list(corr))
-
-			# print samples[j]
-			# if samples[j] == '27562_NS44':
-			# 	indx = np.where(ns_expr_j > 10)[0]
-			# 	print len(indx), len(ns_expr_j)
-			# 	plt.scatter(ns_expr_j[indx], chip_expr_j[indx])
-			# 	plt.show()
-
 		correlations = np.array(correlations)
 
 		##sort the correlations

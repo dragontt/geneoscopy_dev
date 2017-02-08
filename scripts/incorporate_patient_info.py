@@ -14,11 +14,12 @@ def main(argv):
 	parsed = parse_args(argv)
 
 	# read data
-	patientinfo = np.loadtxt(parsed.patientinfo, dtype=str, delimiter="\t", skiprows=1)
+	patientinfo = np.loadtxt(parsed.patientinfo, dtype=str, delimiter="\t")
 	chipdata = np.loadtxt(parsed.chipdata, dtype=str, delimiter="\t")
 	
 	chipdata_chipids = chipdata[1:,0]
-	patient_chipids = filter(None, patientinfo[1:,4])
+	# patient_chipids = filter(None, patientinfo[1:,4])
+	patient_chipids = [x for x in patientinfo[1:,4] if len(x)==5]
 	if len(np.intersect1d(chipdata_chipids, patient_chipids)) != len(chipdata_chipids):
 		sys.exit("Error: Patient ID mismatch")
 
@@ -26,22 +27,25 @@ def main(argv):
 	patient_dict = {}
 	for p in patient_chipids:
 		indx = np.where(patientinfo[1:,4] == p)[0][0]		
-		if patientinfo[indx, 14].lower() == "m":
+		if patientinfo[indx, 15].lower() == "m":
 			sex = 0
-		elif patientinfo[indx, 14].lower() == "f":
+		elif patientinfo[indx, 15].lower() == "f":
 			sex = 1
 		else:
 			sex = 2
-		age = int(patientinfo[indx, 15])
-		if patientinfo[indx, 16].lower() == 'cauc./white':
+		if patientinfo[indx, 16] != "":
+			age = int(patientinfo[indx, 16])
+		else:
+			age = 0
+		if patientinfo[indx, 17].lower() == 'cauc./white':
 			background = 1
 		else:
 			background= 0
-		if patientinfo[indx, 17].lower() == "yes":
+		if patientinfo[indx, 18].lower() == "yes":
 			smoking = 1
 		else:
 			smoking = 0
-		if patientinfo[indx, 18].lower() == "yes":
+		if patientinfo[indx, 19].lower() == "yes":
 			family_hist = 1
 		else:
 			family_hist = 0

@@ -6,7 +6,7 @@ from sklearn import metrics
 ## file IO
 # label_group = "N_vs_C"
 label_group = "N_vs_P_vs_C"
-dir_proj = "/Users/KANG/geneoscopy_dev/data/run_proj_abcdefghi/"
+dir_proj = "/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_1/"
 # file_pred = dir_proj + "tmp/prediction_probs.txt"
 file_pred = dir_proj + "tmp/tmp_1.txt"
 
