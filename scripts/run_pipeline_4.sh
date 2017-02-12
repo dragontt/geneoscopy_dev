@@ -3,10 +3,10 @@ DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 
 ##### INPUT VARIABLES #####
 
-DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_1
+DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_4
 GROUP=N_vs_P_vs_C
 GENE_FILTER=genecards_nanostring_civic
-NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.good_rin.TXT
+NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.sst_rma.good_rin.TXT
 # NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
 # GENE_FILTER_LST=${DIR_DATA}/../external_data/nanostring/PanCancer_nanostring_genes_annotated.txt
 # GENE_FILTER_LST=${DIR_DATA}/../external_data/Genecards_colon_cancer/GeneCards_Nanostring_genes_annotated.txt  
@@ -29,7 +29,7 @@ echo ""
 echo "Preparing normalized data ..."
 python ${DIR_SCRIPTS}/prepare_normalized_expr_data.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o1 ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -o2 ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
 ##### Use full list of probesets
-cp ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
+# cp ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
 #####
 
 echo "Splitting training/testing sets ... "
@@ -45,18 +45,18 @@ python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}
 # echo "Analyzing DE genes ... "
 # Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
 
-# echo "Analyzing CV DE genes ... "
-# mkdir -p ${DIR_DATA}/training/cv_folds
-# python ${DIR_SCRIPTS}/split_cv_folds.py -i ${DIR_DATA}/training/chipdata.txt -v ${DIR_DATA}/training/valid_chips.txt -f $CV_FOLDS -g $GROUP -o ${DIR_DATA}/training/cv_folds
-# for ((i=1; i<=$CV_FOLDS; i++)); do
-# 	echo "    cv fold "$i
-# 	Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/cv_folds/chipdata_random_${i}.txt ${DIR_DATA}/training/cv_folds/valid_chips_random_${i}.txt $GROUP 1 0 ${DIR_DATA}/training/cv_folds/top_de_genes_${i}.txt
-# done
+echo "Analyzing CV DE genes ... "
+mkdir -p ${DIR_DATA}/training/cv_folds
+python ${DIR_SCRIPTS}/split_cv_folds.py -i ${DIR_DATA}/training/chipdata.txt -v ${DIR_DATA}/training/valid_chips.txt -f $CV_FOLDS -g $GROUP -o ${DIR_DATA}/training/cv_folds
+for ((i=1; i<=$CV_FOLDS; i++)); do
+	echo "    cv fold "$i
+	Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/cv_folds/chipdata_random_${i}.txt ${DIR_DATA}/training/cv_folds/valid_chips_random_${i}.txt $GROUP 1 0 ${DIR_DATA}/training/cv_folds/top_de_genes_${i}.txt
+done
 
 
-echo "Analyzing PvsN, CvsN DE genes ... "
-Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.p_vs_n.txt N_vs_C 1 0 ${DIR_DATA}/training/top_de_genes.p_vs_n.txt
-Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.c_vs_n.txt N_vs_C 1 0 ${DIR_DATA}/training/top_de_genes.c_vs_n.txt
+# echo "Analyzing PvsN, CvsN DE genes ... "
+# Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.p_vs_n.txt N_vs_C 1 0 ${DIR_DATA}/training/top_de_genes.p_vs_n.txt
+# Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.c_vs_n.txt N_vs_C 1 0 ${DIR_DATA}/training/top_de_genes.c_vs_n.txt
 
 
 NUM_TOP_GENES_LIST=( 400 )
@@ -65,10 +65,10 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 	echo "top genes -->" $NUM_TOP_GENES
 	echo "#################################"
 	echo ""
-	# python ${DIR_SCRIPTS}/summarize_cv_de_genes.py -i ${DIR_DATA}/training/cv_folds -f $CV_FOLDS -t $NUM_TOP_GENES -o ${DIR_DATA}/training/top_de_genes.txt
+	python ${DIR_SCRIPTS}/summarize_cv_de_genes.py -i ${DIR_DATA}/training/cv_folds -f $CV_FOLDS -t $NUM_TOP_GENES -o ${DIR_DATA}/training/top_de_genes.txt
 
-	head -$((NUM_TOP_GENES/2+1)) ${DIR_DATA}/training/top_de_genes.p_vs_n.txt > ${DIR_DATA}/training/top_de_genes.txt
-	head -$((NUM_TOP_GENES/2+1)) ${DIR_DATA}/training/top_de_genes.c_vs_n.txt | tail -$((NUM_TOP_GENES/2)) >> ${DIR_DATA}/training/top_de_genes.txt
+	# head -$((NUM_TOP_GENES/2+1)) ${DIR_DATA}/training/top_de_genes.p_vs_n.txt > ${DIR_DATA}/training/top_de_genes.txt
+	# head -$((NUM_TOP_GENES/2+1)) ${DIR_DATA}/training/top_de_genes.c_vs_n.txt | tail -$((NUM_TOP_GENES/2)) >> ${DIR_DATA}/training/top_de_genes.txt
 
 	ML_MODELS=(random_forest svm neural_net grad_boosting adaboost gauss_process)
 	# ML_MODELS=( svm )

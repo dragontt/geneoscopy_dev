@@ -93,9 +93,9 @@ def main(argv):
 		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
 		# print messages
-		print "sample_id true_label predict_label", clf.classes_
-		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
-		print "Prediction accuracy:", accuracy_predicted
+		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
 
@@ -112,9 +112,9 @@ def main(argv):
 		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
 		# print message 
-		print "sample_id true_label predict_label", clf.classes_
-		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
-		print "Prediction accuracy:", accuracy_predicted
+		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
 
@@ -171,7 +171,7 @@ def main(argv):
 		#print messages
 		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
 		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
-		print "Prediction accuracy:", accuracy_predicted
+		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
 
@@ -189,9 +189,9 @@ def main(argv):
 		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 		
 		#print messages
-		print "sample_id true_label predict_label", clf.classes_
-		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
-		print "Prediction accuracy:", accuracy_predicted
+		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
 
@@ -209,9 +209,9 @@ def main(argv):
 		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
 		# print messages
-		print "sample_id true_label predict_label", clf.classes_
-		# print '\n'.join(' '.join(str(cell) for cell in row) for row in summary)
-		print "Prediction accuracy:", accuracy_predicted
+		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
 

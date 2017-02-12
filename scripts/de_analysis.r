@@ -14,13 +14,14 @@ thld_fc <- as.numeric(args[5])
 file_output <- args[6]
 
 # Load expression matrix
-expr <- read.table(file_input, header=TRUE, row.names=1, sep="\t")
+expr <- read.table(file_input, header=TRUE, row.names=1, sep="\t", check.names=FALSE)
 # expr <- 2^expr # if using RMA, the expr values are in log2
 # cat("Expression dimension", dim(expr), "\n")
 
 # Create appropriate design matrix and assign column names, then
 # appropriate contrast matrix for pairwise comparisons
-labels <- read.table(file_labels, header=FALSE, sep="\t")[,2]
+labels_table <- read.table(file_labels, header=FALSE, sep="\t")
+labels <- labels_table[,2]
 design <- model.matrix(~0+factor(labels))
 
 if (group == "N_vs_C") {
@@ -34,6 +35,10 @@ if (group == "N_vs_C") {
 	colnames(design) <- c("Normal", "Polyp", "Cancer")
 	contrast.matrix <- makeContrasts(CvsN=Cancer-Normal, CvsP=Cancer-Polyp, PvsN=Polyp-Normal, levels=design)
 }
+
+# Find samples matching to the labels list
+sample_indx <- match(as.vector(labels_table[,1]), as.vector(colnames(expr)))
+expr <- expr[, sample_indx]
 
 # Fit a linear model for each gene based on the given series of arrays
 fit <- lmFit(expr, design, method="ls")

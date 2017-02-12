@@ -181,7 +181,7 @@ def main(argv):
 		from sklearn.svm import SVC
 
 		# train the model
-		clf = SVC(C=1.0, kernel='rbf', probability=True, verbose=False)
+		clf = SVC(C=1, kernel='rbf', probability=True, verbose=False)
 		clf.fit(expr_tr, label_tr)
 		if parsed.output_directory != None:
 			joblib.dump(clf, parsed.output_directory + 'svm_model.pkl')
