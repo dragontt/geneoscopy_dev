@@ -58,7 +58,7 @@ python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}
 # Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.c_vs_n.txt N_vs_C 1 0 ${DIR_DATA}/training/top_de_genes.c_vs_n.txt
 
 
-NUM_TOP_GENES_LIST=( 50 100 150 200 400 )
+NUM_TOP_GENES_LIST=( 50 75 100 125 150 175 200 250 300 400 500 1000 )
 for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 	echo "#################################"
 	echo "top genes -->" $NUM_TOP_GENES
@@ -77,8 +77,8 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 	rm ${DIR_DATA}/training/tmp.txt
 
 
-	# ML_MODELS=(random_forest svm neural_net grad_boosting adaboost gauss_process)
-	ML_MODELS=( grad_boosting )
+	ML_MODELS=(random_forest svm grad_boosting adaboost)
+	# ML_MODELS=( svm )
 	for ML_MODEL in "${ML_MODELS[@]}"; do
 		echo "###" $ML_MODEL "###"
 		
@@ -88,12 +88,12 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 		python ${DIR_SCRIPTS}/incorporate_patient_info.py -p ${PATIENT_SHEET} -d ${DIR_DATA}/training/training_set.txt
 		python ${DIR_SCRIPTS}/incorporate_patient_info.py -p ${PATIENT_SHEET} -d ${DIR_DATA}/testing/testing_set.txt 
 
-		# python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/training/chipdata_full.txt -o ${DIR_DATA}/training/training_set_full.txt
-		# python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/testing/chipdata_full.txt -o ${DIR_DATA}/testing/testing_set_full.txt
+		python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/training/chipdata_full.txt -o ${DIR_DATA}/training/training_set_full.txt
+		python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/testing/chipdata_full.txt -o ${DIR_DATA}/testing/testing_set_full.txt
 
 		echo "Training models ... "
 		rm -rf $ML_MODEL
-		python ${DIR_SCRIPTS}/crc_training.py -i ${DIR_DATA}/training/training_set.txt -f ${DIR_DATA}/training/training_set_full.txt -a $ML_MODEL -o ${DIR_DATA}/training/${ML_MODEL} -s ${DIR_DATA}/training/predictor_normal_stats.txt -cv True
+		python ${DIR_SCRIPTS}/crc_training.py -i ${DIR_DATA}/training/training_set.txt -f ${DIR_DATA}/training/training_set_full.txt -a $ML_MODEL -o ${DIR_DATA}/training/${ML_MODEL} -s ${DIR_DATA}/training/predictor_normal_stats.txt
 
 		echo "Testing prediction ... "
 		python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -f ${DIR_DATA}/testing/testing_set_full.txt -a $ML_MODEL -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl -s ${DIR_DATA}/training/predictor_normal_stats.txt

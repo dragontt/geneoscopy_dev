@@ -176,7 +176,7 @@ def main(argv):
 			clf.fit(expr_tr, label_tr)
 			params = parse_cv_result(clf)
 		else:
-			params = {'n_estimators': 500,
+			params = {'n_estimators': 1000,
 							'criterion': 'gini',
 							'class_weight': None}
 			
@@ -213,18 +213,21 @@ def main(argv):
 			## sklearn model selection
 			from sklearn.model_selection import GridSearchCV
 			svm = SVC()
-			hyperparams = {'C': [1000],
-							'kernel': []}
+			hyperparams = {'C': [1, .75, .5, .25],
+							'kernel': ['rbf', 'linear'],
+							'class_weight': [None, 'balanced']}
 			clf = GridSearchCV(svm, hyperparams, cv=10, n_jobs=4)
 			clf.fit(expr_tr, label_tr)
 			params = parse_cv_result(clf)
 		else:
-			params = {'C': 1
-						}
+			params = {'C': 1,
+						'kernel': 'rbf',
+						'class_weight': None}
 
 		## train the model
 		clf = SVC(C=params['C'], 
 					kernel=params['kernel'], 
+					class_weight=params['class_weight'],
 					probability=True, 
 					verbose=False)
 		clf.fit(expr_tr, label_tr)
@@ -275,7 +278,7 @@ def main(argv):
 		else:
 			params = {'learning_rate': .0025, 
 						'max_depth': 3,
-						'subsample': 1,
+						'subsample': .8,
 						'n_estimators': 1000}
 
 		## train the model
@@ -374,7 +377,7 @@ def main(argv):
 			params = {}
 
 		## train the model
-		clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=params['']), 
+		clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=1.0), 
 										optimizer="fmin_l_bfgs_b")
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
