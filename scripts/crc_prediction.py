@@ -14,6 +14,7 @@ def parse_args(argv):
 	parser.add_argument('-p', '--outlier_predictors', dest='outlier_predictors')
 	parser.add_argument('-s', '--normal_stats', dest='normal_stats')
 	parser.add_argument('-m', '--model_filename', dest='model_filename')
+	parser.add_argument('-v', '--verbose', dest='verbose', default=False)
 	parsed = parser.parse_args(argv[1:])
 	return parsed
 
@@ -93,8 +94,9 @@ def main(argv):
 		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
 		# print messages
-		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
-		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		if parsed.verbose:
+			print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+			print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
 		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
@@ -112,8 +114,9 @@ def main(argv):
 		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
 		# print message 
-		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
-		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		if parsed.verbose:
+			print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+			print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
 		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
@@ -129,7 +132,7 @@ def main(argv):
 		accuracy_predicted = len([label_predicted[i] for i in range(len(label_predicted)) if (label_predicted[i] == label_te[i])]) / float(len(label_predicted))
 
 		# print message 
-		print "Prediction accuracy:", accuracy_predicted
+		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
 
@@ -138,6 +141,9 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 		
+		# ## convert to two class
+		# label_te = np.array([1 if x=='P' or x=='C' else 0 for x in label_te])
+
 		# predict on validation set
 		clf = joblib.load(parsed.model_filename)
 		label_predicted = clf.predict(expr_te)
@@ -169,8 +175,9 @@ def main(argv):
 		# 	print("\t".join( [sample_id[i], label_te[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
 
 		#print messages
-		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
-		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		if parsed.verbose:
+			print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+			print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
 		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
@@ -189,8 +196,9 @@ def main(argv):
 		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 		
 		#print messages
-		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
-		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		if parsed.verbose:
+			print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+			print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
 		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu
@@ -209,8 +217,9 @@ def main(argv):
 		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
 
 		# print messages
-		print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
-		print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		if parsed.verbose:
+			print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+			print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
 		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu

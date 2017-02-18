@@ -36,6 +36,8 @@ if (group == "N_vs_C") {
 	contrast.matrix <- makeContrasts(CvsN=Cancer-Normal, CvsP=Cancer-Polyp, PvsN=Polyp-Normal, levels=design)
 }
 
+# print(cbind(labels_table, design))
+
 # Find samples matching to the labels list
 sample_indx <- match(as.vector(labels_table[,1]), as.vector(colnames(expr)))
 expr <- expr[, sample_indx]

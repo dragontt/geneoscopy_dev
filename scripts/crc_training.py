@@ -18,6 +18,7 @@ def parse_args(argv):
 	parser.add_argument('-p', '--outlier_predictors', dest='outlier_predictors')
 	parser.add_argument('-s', '--normal_stats', dest='normal_stats')
 	parser.add_argument('-o', '--output_directory', dest='output_directory')
+	parser.add_argument('-cv', '--cross_valid', dest='cross_valid', default=False)
 	parsed = parser.parse_args(argv[1:])
 	return parsed
 
@@ -124,6 +125,15 @@ def calculate_confusion_matrix(label_te, label_pred):
 	return [sens, spec, accu]
 
 
+def parse_cv_result(clf):
+	print('CV training', np.max(clf.cv_results_['mean_train_score']))
+	print('CV testing', np.max(clf.cv_results_['mean_test_score']))
+	print(clf.cv_results_['params'][np.argmax(clf.cv_results_['mean_train_score'])])
+	print(clf.cv_results_['params'][np.argmax(clf.cv_results_['mean_test_score'])])
+	opt_params = clf.cv_results_['params'][np.argmax(clf.cv_results_['mean_test_score'])]
+	return opt_params
+
+
 def main(argv):
 	# parse data
 	parsed = parse_args(argv)
@@ -150,41 +160,82 @@ def main(argv):
 	print "CRC labels:", label_unique, ", counts:", label_count
 
 	time_start = time.clock()
-
-
+	
 	##### Random Forest #####
 	if parsed.learning_algorithm.lower() ==	'random_forest':
 		from sklearn.ensemble import RandomForestClassifier
-		
-		# train the model
-		clf = RandomForestClassifier(n_estimators=1000, n_jobs=5, criterion="entropy", oob_score=True, class_weight="balanced", verbose=False)
-		clf.fit(expr_tr, label_tr)
-		if parsed.output_directory != None:
-			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
-		
-		time_end = time.clock()
-		time_elapsed = time_end - time_start
 
-		# sort genes by importance
+		if parsed.cross_valid:
+			## sklearn model selection
+			from sklearn.model_selection import GridSearchCV
+			rf = RandomForestClassifier()
+			hyperparams = {'n_estimators': [250, 500, 1000],
+							'criterion': ['gini', 'entropy'],
+							'class_weight': [None, 'balanced']}
+			clf = GridSearchCV(rf, hyperparams, cv=10, n_jobs=4)
+			clf.fit(expr_tr, label_tr)
+			params = parse_cv_result(clf)
+		else:
+			params = {'n_estimators': 500,
+							'criterion': 'gini',
+							'class_weight': None}
+			
+		## train the model
+		clf = RandomForestClassifier(n_estimators=params['n_estimators'], 
+										criterion=params['criterion'],
+										class_weight=params['class_weight'],
+										oob_score=True,
+										n_jobs=4, 
+										verbose=False)
+		clf.fit(expr_tr, label_tr)
+		label_pred = clf.predict(expr_tr)
+		accuracy_pred = clf.score(expr_tr, label_tr)
+		print "Training accuracy:", accuracy_pred
+		print "Out-of-bag accuracy:", clf.oob_score_
+
+		## save the model
+		if parsed.output_directory != None:
+			joblib.dump(clf, parsed.output_directory + 
+				parsed.learning_algorithm.lower() + '_model.pkl')
+		
+		## sort genes by importance
 		num_most_important_gene = 25
 		gene_score = clf.feature_importances_
 		gene_index = gene_score.argsort()[-num_most_important_gene:][::-1]
 		num_most_important_gene = min(num_most_important_gene, len(gene_score))
-
-		# print messages 
-		print "Training time elapsed:", time_elapsed, "sec"
-		print "Out-of-bag accuracy:", clf.oob_score_
 
 
 	##### SVM #####
 	elif parsed.learning_algorithm.lower() == 'svm':
 		from sklearn.svm import SVC
 
-		# train the model
-		clf = SVC(C=1, kernel='rbf', probability=True, verbose=False)
+		if parsed.cross_valid:
+			## sklearn model selection
+			from sklearn.model_selection import GridSearchCV
+			svm = SVC()
+			hyperparams = {'C': [1000],
+							'kernel': []}
+			clf = GridSearchCV(svm, hyperparams, cv=10, n_jobs=4)
+			clf.fit(expr_tr, label_tr)
+			params = parse_cv_result(clf)
+		else:
+			params = {'C': 1
+						}
+
+		## train the model
+		clf = SVC(C=params['C'], 
+					kernel=params['kernel'], 
+					probability=True, 
+					verbose=False)
 		clf.fit(expr_tr, label_tr)
+		label_pred = clf.predict(expr_tr)
+		accuracy_pred = clf.score(expr_tr, label_tr)
+		print "Training accuracy:", accuracy_pred
+
+		## save the model
 		if parsed.output_directory != None:
-			joblib.dump(clf, parsed.output_directory + 'svm_model.pkl')
+			joblib.dump(clf, parsed.output_directory + 
+				parsed.learning_algorithm.lower() + '_model.pkl')
 
 
 	##### Neural Network #####
@@ -199,52 +250,48 @@ def main(argv):
 		clf = Pipeline(steps=[('rmb', rbm), ('logistic', logistic)])
 		clf.fit(expr_tr, label_tr)
 		if parsed.output_directory != None:
-			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
+			joblib.dump(clf, parsed.output_directory + 
+				parsed.learning_algorithm.lower() + '_model.pkl')
 
 
 	##### Gradient Boosting #####		
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier
 
-		optimal_param = 3
+		# ## convert to two class 
+		# label_tr = [1 if x=='P' or x=='C' else 0 for x in label_tr]
 
-		# ## cross validation
-		# n_folds = 10
-		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		# param_range = range(1,8) ##max depth
-		# # param_range = [.0005, .001, .0015, .002, .0025, .005, .0075, .01] ##learning rate
-		# # param_range = np.arange(.1,1,.1) ##stochastic process
-		# accuracy_lst = []
-		# for p in param_range:
-		# 	print "Running cross valdiation ... p =", p
-		# 	clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
-		# 	accuracy_sum = 0
-		# 	for i in range(n_folds):
-		# 		# internal training and testing
-		# 		expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
-		# 		label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
-		# 		expr_tr1 = expr_tr_cv[i]
-		# 		label_tr1 = label_tr_cv[i]
-		# 		clf.fit(expr_tr0, label_tr0)
-		# 		label_pred = clf.predict(expr_tr1)
-		# 		# accuracy_pred = clf.score(expr_tr, label_tr)
-		# 		[foo, foo, accuracy_pred] = calculate_confusion_matrix(label_tr1, label_pred)
-		# 		accuracy_sum += accuracy_pred
-		# 	accuracy_lst.append(accuracy_sum/float(n_folds))
-		# 	print "   Average accuracy:", accuracy_sum/float(n_folds)
-		# optimal_param = param_range[np.argmax(accuracy_lst)]
-		# print "Optimal param:", optimal_param
+		if parsed.cross_valid:
+			## sklearn model selection
+			from sklearn.model_selection import GridSearchCV
+			gb = GradientBoostingClassifier()
+			hyperparams = {'learning_rate': [.01, .0075, .005, .001, .0005], 
+							'max_depth': [2, 3, 4],
+							'subsample': [1, .8, .5],
+							'n_estimators': [1000]}
+			clf = GridSearchCV(gb, hyperparams, cv=10, n_jobs=4)
+			clf.fit(expr_tr, label_tr)
+			params = parse_cv_result(clf)
+		else:
+			params = {'learning_rate': .0025, 
+						'max_depth': 3,
+						'subsample': 1,
+						'n_estimators': 1000}
 
 		## train the model
-		# clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)
-		clf = GradientBoostingClassifier(learning_rate=.01, n_estimators=1000, max_depth=optimal_param, subsample=0.8, verbose=False)
-
+		clf = GradientBoostingClassifier(learning_rate=params['learning_rate'], 
+											n_estimators=params['n_estimators'], 
+											max_depth=params['max_depth'], 
+											subsample=params['subsample'], 
+											verbose=False)
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		accuracy_pred = clf.score(expr_tr, label_tr)
 		print "Training accuracy:", clf.score(expr_tr, label_tr)
 		if parsed.output_directory != None:
-			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
+			joblib.dump(clf, parsed.output_directory + 
+				parsed.learning_algorithm.lower() + '_model.pkl')
+
 
 		# ## calculate score for ML prediction
 		# score_ml = .8*clf.predict_proba(expr_tr)[:,0]
@@ -281,13 +328,33 @@ def main(argv):
 	elif parsed.learning_algorithm.lower() == "adaboost":
 		from sklearn.ensemble import AdaBoostClassifier
 		from sklearn.tree import DecisionTreeClassifier
-		clf = AdaBoostClassifier(DecisionTreeClassifier(max_depth=3), n_estimators=1000, learning_rate=.0025)
+
+		if parsed.cross_valid:
+			## sklearn model selection
+			from sklearn.model_selection import GridSearchCV
+			ab = AdaBoostClassifier(best_esimator=DecisionTreeClassifier(max_depth=3))
+			hyperparams = {'learning_rate': [.01, .0075, .005, .001, .0005], 
+							'n_estimators': [1000]}
+			clf = GridSearchCV(ab, hyperparams, cv=10, n_jobs=4)
+			clf.fit(expr_tr, label_tr)
+			params = parse_cv_result(clf)
+		else:
+			params = {'learning_rate': .0025, 
+						'n_estimators': 1000}
+
+		## train the model
+		clf = AdaBoostClassifier(best_esimator=DecisionTreeClassifier(max_depth=3), 
+									learning_rate=params['learning_rate'],
+									n_estimators=params['n_estimators'])
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		accuracy_pred = clf.score(expr_tr, label_tr)
 		print "Training accuracy:", clf.score(expr_tr, label_tr)
+
+		## save the model
 		if parsed.output_directory != None:
-			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
+			joblib.dump(clf, parsed.output_directory + 
+				parsed.learning_algorithm.lower() + '_model.pkl')
 
 
 	##### Gaussian Process #####
@@ -295,46 +362,36 @@ def main(argv):
 		from sklearn.gaussian_process import GaussianProcessClassifier
 		from sklearn.gaussian_process.kernels import RBF
 
-		optimal_param = 1.0
-		## cross validation
-		# n_folds = 10
-		# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-		# param_range = [.1,.25,.5,1,2.5,5,10] # choose the param to tune
-		# accuracy_lst = []
-		# for p in param_range:
-		# 	print "Running cross valdiation ... p =", p
-		# 	clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=p), optimizer="fmin_l_bfgs_b")
-		# 	accuracy_sum = 0
-		# 	for i in range(n_folds):
-		# 		# internal training and testing
-		# 		expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
-		# 		label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
-		# 		expr_tr1 = expr_tr_cv[i]
-		# 		label_tr1 = label_tr_cv[i]
-		# 		clf.fit(expr_tr0, label_tr0)
-		# 		label_pred = clf.predict(expr_tr1)
-		# 		accuracy_pred = len([label_pred[i] for i in range(len(label_pred)) if (label_pred[i] == label_tr1[i])]) / float(len(label_pred))
-		# 		accuracy_sum += accuracy_pred
-		# 	accuracy_lst.append(accuracy_sum/float(n_folds))
-		# 	print "   Average accuracy:", accuracy_sum/float(n_folds)
-		# optimal_param = param_range[np.argmax(accuracy_lst)]
-		# print "Optimal param:", optimal_param
+		if parsed.cross_valid:
+			## sklearn model selection
+			from sklearn.model_selection import GridSearchCV
+			gb = GaussianProcessClassifier()
+			hyperparams = {}
+			clf = GridSearchCV(gb, hyperparams, cv=10, n_jobs=4)
+			clf.fit(expr_tr, label_tr)
+			params = parse_cv_result(clf)
+		else:
+			params = {}
 
-		# train the model
-		clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=optimal_param), optimizer="fmin_l_bfgs_b")
+		## train the model
+		clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=params['']), 
+										optimizer="fmin_l_bfgs_b")
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		print "Training accuracy:", clf.score(expr_tr, label_tr)
+
+		## save the model
 		if parsed.output_directory != None:
-			joblib.dump(clf, parsed.output_directory + parsed.learning_algorithm.lower() + '_model.pkl')
+			joblib.dump(clf, parsed.output_directory + 
+				parsed.learning_algorithm.lower() + '_model.pkl')
 
 	else:
 		sys.exit('Improper learning algorithm option given.')
 
-	# print timing messages
+
+	## print timer messages
 	time_end = time.clock()
-	time_elapsed = time_end - time_start
-	print "Training time elapsed:", time_elapsed, "sec"
+	print "Training time elapsed:", time_end-time_start, "sec"
 
 
 if __name__ == "__main__":

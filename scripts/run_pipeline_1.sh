@@ -28,9 +28,9 @@ echo ""
 
 echo "Preparing normalized data ..."
 python ${DIR_SCRIPTS}/prepare_normalized_expr_data.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o1 ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -o2 ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
-##### Use full list of probesets
-cp ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
-#####
+# ##### Use full list of probesets
+# cp ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
+# #####
 
 echo "Splitting training/testing sets ... "
 mkdir -p ${DIR_DATA}/training
