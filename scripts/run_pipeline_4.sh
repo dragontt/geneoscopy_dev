@@ -3,8 +3,8 @@ DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 
 ##### INPUT VARIABLES #####
 
-DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_3
-GROUP=N_vs_P_vs_C
+DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_4
+GROUP=N_vs_C
 GENE_FILTER=genecards_nanostring_civic
 NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.sst_rma.gene_symbol.txt
 # NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
@@ -74,10 +74,10 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 
 
 	echo "Analyzing DE genes ... "
-	Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
-	cp ${DIR_DATA}/training/top_de_genes.txt ${DIR_DATA}/training/tmp.txt
-	head -$((NUM_TOP_GENES+1)) ${DIR_DATA}/training/tmp.txt > ${DIR_DATA}/training/top_de_genes.txt
-	rm ${DIR_DATA}/training/tmp.txt
+	# Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
+	# cp ${DIR_DATA}/training/top_de_genes.txt ${DIR_DATA}/training/tmp.txt
+	# head -$((NUM_TOP_GENES+1)) ${DIR_DATA}/training/tmp.txt > ${DIR_DATA}/training/top_de_genes.txt
+	# rm ${DIR_DATA}/training/tmp.txt
 
 
 	# ML_MODELS=(random_forest svm grad_boosting adaboost)

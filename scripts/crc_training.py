@@ -214,7 +214,7 @@ def main(argv):
 			from sklearn.model_selection import GridSearchCV
 			svm = SVC()
 			hyperparams = {'C': [1, .75, .5, .25],
-							'kernel': ['rbf', 'linear'],
+							'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
 							'class_weight': [None, 'balanced']}
 			clf = GridSearchCV(svm, hyperparams, cv=10, n_jobs=4)
 			clf.fit(expr_tr, label_tr)
@@ -335,7 +335,7 @@ def main(argv):
 		if parsed.cross_valid:
 			## sklearn model selection
 			from sklearn.model_selection import GridSearchCV
-			ab = AdaBoostClassifier(best_esimator=DecisionTreeClassifier(max_depth=3))
+			ab = AdaBoostClassifier(DecisionTreeClassifier(max_depth=3))
 			hyperparams = {'learning_rate': [.01, .0075, .005, .001, .0005], 
 							'n_estimators': [1000]}
 			clf = GridSearchCV(ab, hyperparams, cv=10, n_jobs=4)
@@ -346,7 +346,7 @@ def main(argv):
 						'n_estimators': 1000}
 
 		## train the model
-		clf = AdaBoostClassifier(best_esimator=DecisionTreeClassifier(max_depth=3), 
+		clf = AdaBoostClassifier(DecisionTreeClassifier(max_depth=3), 
 									learning_rate=params['learning_rate'],
 									n_estimators=params['n_estimators'])
 		clf.fit(expr_tr, label_tr)
