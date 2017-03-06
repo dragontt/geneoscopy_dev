@@ -39,10 +39,10 @@ python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}
 python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
 
-echo "Analyzing DE genes ... "
-# 	Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
+# echo "Analyzing DE genes ... "
+# Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
 
-# python ${DIR_SCRIPTS}/combine_de_genes.py ${DIR_DATA}/training/top_de_genes.constrained_gene_set.txt ${DIR_DATA}/training/top_de_genes.all_gene_symbol.txt 0.01 0.0025 ${DIR_DATA}/training/top_de_genes.txt
+# python ${DIR_SCRIPTS}/combine_de_genes.py ${DIR_DATA}/training/top_de_genes.constrained_gene_set.txt ${DIR_DATA}/training/top_de_genes.all_gene_symbol.txt 0.0234 0.0004 ${DIR_DATA}/training/top_de_genes.txt
 # wc -l ${DIR_DATA}/training/top_de_genes.txt
 
 
@@ -80,7 +80,7 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 	rm ${DIR_DATA}/training/tmp.txt
 
 
-	# ML_MODELS=(random_forest svm grad_boosting adaboost)
+	# ML_MODELS=(random_forest svm grad_boosting adaboost gauss_process)
 	ML_MODELS=( svm )
 	for ML_MODEL in "${ML_MODELS[@]}"; do
 		echo "###" $ML_MODEL "###"
@@ -96,10 +96,13 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 
 		echo "Training models ... "
 		rm -rf $ML_MODEL
-		python ${DIR_SCRIPTS}/crc_training.py -i ${DIR_DATA}/training/training_set.txt -f ${DIR_DATA}/training/training_set_full.txt -a $ML_MODEL -o ${DIR_DATA}/training/${ML_MODEL} -s ${DIR_DATA}/training/predictor_normal_stats.txt
+		python ${DIR_SCRIPTS}/crc_training.py -i ${DIR_DATA}/training/training_set.txt -f ${DIR_DATA}/training/training_set_full.txt -a $ML_MODEL -o ${DIR_DATA}/training/${ML_MODEL} -s ${DIR_DATA}/training/predictor_normal_stats.txt -cv 10
+		# ## ONLY FOR ROC curve
+		# python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/training/training_set.txt -f ${DIR_DATA}/training/training_set_full.txt -a $ML_MODEL -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl -s ${DIR_DATA}/training/predictor_normal_stats.txt -v 1
+		# ###
 
 		echo "Testing prediction ... "
-		python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -f ${DIR_DATA}/testing/testing_set_full.txt -a $ML_MODEL -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl -s ${DIR_DATA}/training/predictor_normal_stats.txt -v 1
+		python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -f ${DIR_DATA}/testing/testing_set_full.txt -a $ML_MODEL -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl -s ${DIR_DATA}/training/predictor_normal_stats.txt
 		echo ""
 	done
 

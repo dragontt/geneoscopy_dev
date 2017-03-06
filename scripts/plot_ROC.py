@@ -97,22 +97,23 @@ elif label_group == "N_vs_P_vs_C":
 	fpr_cvp, tpr_cvp, thresholds_cvp = metrics.roc_curve(labels_cvp, probs_cvp)
 	roc_auc_cvp = metrics.auc(fpr_cvp, tpr_cvp)
 
-	plt.figure()
+	plt.figure(num=None, figsize=(9,8), dpi=120)
 	plt.plot(fpr_all, tpr_all, color='r', linestyle='-', lw=4, 
-		label='Pos/Neg recommendation (AUC = %0.2f)' % roc_auc_all)
+		label='Pos/Neg recommendation (AUC = %0.3f)' % roc_auc_all)
 	for i in range(len(fpr_all)):
 		print (fpr_all[i], tpr_all[i])
 	plt.plot(fpr_cancer, tpr_cancer, color='g', linestyle='-', lw=2, 
-		label='Cancer/Normal (AUC = %0.2f)' % roc_auc_cancer)
+		label='Cancer/Normal (AUC = %0.3f)' % roc_auc_cancer)
 	plt.plot(fpr_polyp, tpr_polyp, color='b', linestyle='-', lw=2, 
-		label='Polyp/Normal (AUC = %0.2f)' % roc_auc_polyp)
+		label='Polyp/Normal (AUC = %0.3f)' % roc_auc_polyp)
 	plt.plot(fpr_cvp, tpr_cvp, color='m', linestyle='-', lw=2, 
-		label='Cancer/Polyp (AUC = %0.2f)' % roc_auc_cvp)
+		label='Cancer/Polyp (AUC = %0.3f)' % roc_auc_cvp)
 	plt.plot([0, 1], [0, 1], color='k', lw=2, linestyle='--')
 	plt.xlim([0.0, 1.05])
 	plt.ylim([0.0, 1.05])
 	plt.xlabel('False Positive Rate')
 	plt.ylabel('True Positive Rate')
 	plt.legend(loc="lower right")
-	plt.show()
+	# plt.show()
+	plt.savefig('/Users/KANG/Desktop/fig0.png',format='png', transparent=True)
 

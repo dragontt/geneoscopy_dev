@@ -150,113 +150,47 @@ def main(argv):
 
 	time_start = time.clock()
 
-
-	##### SVM #####
+	##### ENSEMBLE MODEL #####
+	from sklearn.ensemble import VotingClassifier
+	from sklearn.ensemble import RandomForestClassifier
 	from sklearn.svm import SVC
-
-	# train the model
-	clf = SVC(C=1.0, kernel='rbf', probability=True, verbose=False)
-	clf.fit(expr_tr, label_tr)
-	if parsed.output_directory != None:
-		tmp_out_dir = parsed.output_directory + '/svm'
-		if not os.path.exists(tmp_out_dir):
-			os.makedirs(tmp_out_dir)
-		joblib.dump(clf, tmp_out_dir + '/svm_model.pkl')
-
-
-	##### Gradient Boosting #####		
 	from sklearn.ensemble import GradientBoostingClassifier
-
-	optimal_param = 3
-
-	# ## cross validation
-	# n_folds = 10
-	# (expr_tr_cv, label_tr_cv) = generate_cross_validation(expr_tr, label_tr, n_folds=n_folds)
-	# param_range = range(1,8) ##max depth
-	# # param_range = [.0005, .001, .0015, .002, .0025, .005, .0075, .01] ##learning rate
-	# # param_range = np.arange(.1,1,.1) ##stochastic process
-	# accuracy_lst = []
-	# for p in param_range:
-	# 	print "Running cross valdiation ... p =", p
-	# 	clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=p, subsample=1.0,verbose=False)
-	# 	accuracy_sum = 0
-	# 	for i in range(n_folds):
-	# 		# internal training and testing
-	# 		expr_tr0 = np.vstack(expr_tr_cv[np.setdiff1d(range(n_folds),i)])
-	# 		label_tr0 = np.hstack(label_tr_cv[np.setdiff1d(range(n_folds),i)])
-	# 		expr_tr1 = expr_tr_cv[i]
-	# 		label_tr1 = label_tr_cv[i]
-	# 		clf.fit(expr_tr0, label_tr0)
-	# 		label_pred = clf.predict(expr_tr1)
-	# 		# accuracy_pred = clf.score(expr_tr, label_tr)
-	# 		[foo, foo, accuracy_pred] = calculate_confusion_matrix(label_tr1, label_pred)
-	# 		accuracy_sum += accuracy_pred
-	# 	accuracy_lst.append(accuracy_sum/float(n_folds))
-	# 	print "   Average accuracy:", accuracy_sum/float(n_folds)
-	# optimal_param = param_range[np.argmax(accuracy_lst)]
-	# print "Optimal param:", optimal_param
-
-	## train the model
-	# clf = GradientBoostingClassifier(learning_rate=.0025, n_estimators=1000, max_depth=optimal_param, subsample=1.0,verbose=False)
-	clf = GradientBoostingClassifier(learning_rate=.01, n_estimators=1000, max_depth=optimal_param, subsample=0.8, verbose=False)
-
-	clf.fit(expr_tr, label_tr)
-	label_pred = clf.predict(expr_tr)
-	accuracy_pred = clf.score(expr_tr, label_tr)
-	print "Training accuracy:", clf.score(expr_tr, label_tr)
-	if parsed.output_directory != None:
-		tmp_out_dir = parsed.output_directory + '/grad_boosting'
-		if not os.path.exists(tmp_out_dir):
-			os.makedirs(tmp_out_dir)
-		joblib.dump(clf, tmp_out_dir + '/grad_boosting_model.pkl')
-
-	# ## calculate score for ML prediction
-	# score_ml = .8*clf.predict_proba(expr_tr)[:,0]
-	# ## add weight to outlier predictors
-	# score_predictors = np.zeros(len(sample_id))
-	# (tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_tr_full, gene_id_full)
-	# print "Predictors added:", tc_predictors
-	# weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
-	# (tc_predictors_normal_expr_median, tc_predictors_normal_expr_sd, tc_predictors_first_pct, tc_predictors_third_pct) = parse_predictor_stats(tc_predictors_expr)
-	# # thlds = tc_predictors_normal_expr_median + 2*tc_predictors_normal_expr_sd
-	# thlds = 1*(tc_predictors_third_pct - tc_predictors_first_pct) + tc_predictors_third_pct
-	# for j in range(len(tc_predictors)):
-	# 	indx = np.where(tc_predictors_expr[:,j] > thlds[j])[0]
-	# 	for i in indx:
-	# 		score_predictors[i] += weight_predictors[j]
-	# 		# score_predictors[i] = .2
-	# ## save normal statistis 
-	# out_normal_stats = [["TC_id", "median", "sd", "1st_pct", "3rd_pct"]]
-	# for j in range(len(tc_predictors)):
-	# 	out_normal_stats.append([tc_predictors[j], tc_predictors_normal_expr_median[j], tc_predictors_normal_expr_sd[j], tc_predictors_first_pct[j], tc_predictors_third_pct[j]])
-	# np.savetxt(parsed.normal_stats, np.array(out_normal_stats, dtype=str), fmt="%s", delimiter="\t")
-	# ## final prediction
-	# print("\t".join(["sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"]))
-	# score_final = []
-	# for i in range(len(sample_id)):
-	# 	score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
-	# 	score_final.append(score)
-	# 	predicted_label = "C" if score > .5 else "N"
-	# 	print("\t".join([sample_id[i], label_tr[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
-		
-
-
-	##### AdaBoost #####
 	from sklearn.ensemble import AdaBoostClassifier
 	from sklearn.tree import DecisionTreeClassifier
-	clf = AdaBoostClassifier(DecisionTreeClassifier(max_depth=3), n_estimators=1000, learning_rate=.0025)
-	clf.fit(expr_tr, label_tr)
-	label_pred = clf.predict(expr_tr)
-	accuracy_pred = clf.score(expr_tr, label_tr)
-	print "Training accuracy:", clf.score(expr_tr, label_tr)
+	from sklearn.gaussian_process import GaussianProcessClassifier
+	from sklearn.gaussian_process.kernels import RBF
+	from sklearn.model_selection import cross_val_score
+
+	clfrf = RandomForestClassifier(n_estimators=1000)
+	clfsvm = SVC(C=1.6, 
+						kernel='rbf',
+						probability=True)
+	clfgb = GradientBoostingClassifier(learning_rate=.0025, 
+						max_depth=3,
+						subsample=.8,
+						n_estimators=1000)
+	clfab = AdaBoostClassifier(DecisionTreeClassifier(max_depth=3))
+	clfgp = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=1.0), 
+						optimizer="fmin_l_bfgs_b")
+
+	## define model
+	eclf = VotingClassifier(estimators=[('rf',clfrf), ('svm',clfsvm), ('gb',clfgb), ('ab',clfab), ('gp',clfgp)], voting="soft", weights=[3,5,1,1,3])
+
+	## cross validation
+	# for clf, label in zip([clfrf, clfsvm, clfgb, clfab, clfgp, eclf], 
+	# 	['Random forest', 'SVM', 'Grad boost', 'Adabost', 'Gauss proc', 'Ensemble']):
+	# 	scores = cross_val_score(clf, expr_tr, label_tr, cv=10, scoring='accuracy')
+	# 	print("Accuracy: %0.5f (+/- %0.5f) [%s]" % (scores.mean(), scores.std(), label))
+	
+	## fit model
+	eclf = eclf.fit(expr_tr, label_tr)
+
+	## save the model
 	if parsed.output_directory != None:
-		tmp_out_dir = parsed.output_directory + '/adaboost'
-		if not os.path.exists(tmp_out_dir):
-			os.makedirs(tmp_out_dir)
-		joblib.dump(clf, tmp_out_dir + '/adaboost_model.pkl')
+		joblib.dump(eclf, parsed.output_directory + '/ensemble_model.pkl')
 
 
-	# print timing messages
+	## print timing messages
 	time_end = time.clock()
 	time_elapsed = time_end - time_start
 	print "Training time elapsed:", time_elapsed, "sec"

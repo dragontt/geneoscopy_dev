@@ -80,97 +80,27 @@ def main(argv):
 	print "CRC labels:", label_unique, ", counts:", label_count 
 
 
-
-	##### SVM #####
+	##### ENSEMBLE MODEL #####
+	from sklearn.ensemble import VotingClassifier
+	from sklearn.ensemble import RandomForestClassifier
 	from sklearn.svm import SVC
-
-	# predict on validation set
-	clf = joblib.load(parsed.model_directory + '/svm/svm_model.pkl')
-	label_predicted = clf.predict(expr_te)
-	svm_probability_predicted = clf.predict_proba(expr_te)
-	accuracy_predicted = clf.score(expr_te, label_te)
-	summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, svm_probability_predicted))
-
-	# print message 
-	# print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
-	# print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
-	# print "Prediction accuracy:", accuracy_predicted
-	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	print "Sens",sens, "Spec",spec, "Accu",accu
-
-
-	##### Gradient Boosting #####
 	from sklearn.ensemble import GradientBoostingClassifier
-	
-	# predict on validation set
-	clf = joblib.load(parsed.model_directory + '/grad_boosting/grad_boosting_model.pkl')
-	label_predicted = clf.predict(expr_te)
-	gb_probability_predicted = clf.predict_proba(expr_te)
-	accuracy_predicted = clf.score(expr_te, label_te)
-	summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, gb_probability_predicted))
-
-	# ## calculate score for ML prediction
-	# score_ml = .8*clf.predict_proba(expr_te)[:,0]
-	# ## add weight to outlier predictors
-	# score_predictors = np.zeros(len(sample_id))
-	# (tc_predictors, tc_predictors_expr) = get_predictor_expr(parsed.outlier_predictors, expr_te_full, gene_id_full)
-	# weight_predictors = [.2/len(tc_predictors)]*len(tc_predictors)
-	# tc_predictors_pct = parse_normal_stats(parsed.normal_stats)
-	# for j in range(len(tc_predictors)):
-	# 	pcts = tc_predictors_pct[tc_predictors[j]]
-	# 	thld = 1*(pcts[1] - pcts[0]) + pcts[1]
-	# 	indx = np.where(tc_predictors_expr[:,j] > thld)[0]
-	# 	for i in indx:
-	# 		score_predictors[i] += weight_predictors[j]
-	# 		# score_predictors[i] = .2
-	# ## final prediction
-	# print("\t".join(["sample_id", "true_label", "predicted_label", "score_ML", "score_predictors", "final_score", "score_change?"]))
-	# score_final = []
-	# for i in range(len(sample_id)):
-	# 	score = (score_ml[i]+score_predictors[i])/(1+score_predictors[i])
-	# 	score_final.append(score)
-	# 	predicted_label = "C" if score > .5 else "N"
-	# 	print("\t".join( [sample_id[i], label_te[i], predicted_label, str(score_ml[i]), str(score_predictors[i]), str(score), str(score != score_ml[i])] ))
-
-	#print messages
-	# print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
-	# print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
-	# print "Prediction accuracy:", accuracy_predicted
-	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	print "Sens",sens, "Spec",spec, "Accu",accu
-
-
-	##### AdaBoost #####]
 	from sklearn.ensemble import AdaBoostClassifier
 	from sklearn.tree import DecisionTreeClassifier
+	from sklearn.gaussian_process import GaussianProcessClassifier
+	from sklearn.gaussian_process.kernels import RBF
 
-	# predict on validation set
-	clf = joblib.load(parsed.model_directory + '/adaboost/adaboost_model.pkl')
+	## predict testing set
+	clf = joblib.load(parsed.model_directory + '/ensemble_model.pkl')
 	label_predicted = clf.predict(expr_te)
-	ab_probability_predicted = clf.predict_proba(expr_te)
-	accuracy_predicted = clf.score(expr_te, label_te)
-	summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, ab_probability_predicted))
-	
-	#print messages
+	# prob_predicted = clf.predict_proba(expr_te)
+	# summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, prob_predicted))
+	summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T))
+
+	## print results
 	# print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
 	# print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
-	# print "Prediction accuracy:", accuracy_predicted
 	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	print "Sens",sens, "Spec",spec, "Accu",accu
-
-
-
-	## Assemble all model predictions
-	ensemble_probability_predicted = (5/10.*svm_probability_predicted + 2.5/10.*gb_probability_predicted + 25./10.*ab_probability_predicted)
-	label_indx_dict = {0:'C', 1:'N', 2:'P'} 
-	ensemble_label_predicted = np.array([label_indx_dict[np.argmax(ensemble_probability_predicted[i,])] for i in range(len(ensemble_probability_predicted))])
-	ensemble_summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, ensemble_label_predicted[np.newaxis].T, ensemble_probability_predicted))
-
-	print ""
-	print "ENSEMBLE MODEL"
-	print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
-	print '\n'.join('\t'.join(str(x) for x in row) for row in ensemble_summary)
-	[sens, spec, accu] = calculate_confusion_matrix(label_te, ensemble_label_predicted)
 	print "Sens",sens, "Spec",spec, "Accu",accu
 
 

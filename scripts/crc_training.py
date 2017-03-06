@@ -18,7 +18,7 @@ def parse_args(argv):
 	parser.add_argument('-p', '--outlier_predictors', dest='outlier_predictors')
 	parser.add_argument('-s', '--normal_stats', dest='normal_stats')
 	parser.add_argument('-o', '--output_directory', dest='output_directory')
-	parser.add_argument('-cv', '--cross_valid', dest='cross_valid', default=False)
+	parser.add_argument('-cv', '--cross_valid', dest='cross_valid', default=None, type=int)
 	parsed = parser.parse_args(argv[1:])
 	return parsed
 
@@ -128,6 +128,9 @@ def calculate_confusion_matrix(label_te, label_pred):
 def parse_cv_result(clf):
 	print('CV training', np.max(clf.cv_results_['mean_train_score']))
 	print('CV testing', np.max(clf.cv_results_['mean_test_score']))
+	# print("")
+	# print(clf.cv_results_['mean_test_score'])
+	# print("")
 	print(clf.cv_results_['params'][np.argmax(clf.cv_results_['mean_train_score'])])
 	print(clf.cv_results_['params'][np.argmax(clf.cv_results_['mean_test_score'])])
 	opt_params = clf.cv_results_['params'][np.argmax(clf.cv_results_['mean_test_score'])]
@@ -172,7 +175,7 @@ def main(argv):
 			hyperparams = {'n_estimators': [250, 500, 1000],
 							'criterion': ['gini', 'entropy'],
 							'class_weight': [None, 'balanced']}
-			clf = GridSearchCV(rf, hyperparams, cv=10, n_jobs=4)
+			clf = GridSearchCV(rf, hyperparams, cv=parsed.cross_valid, n_jobs=4)
 			clf.fit(expr_tr, label_tr)
 			params = parse_cv_result(clf)
 		else:
@@ -213,14 +216,25 @@ def main(argv):
 			## sklearn model selection
 			from sklearn.model_selection import GridSearchCV
 			svm = SVC()
-			hyperparams = {'C': [1, .75, .5, .25],
-							'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
-							'class_weight': [None, 'balanced']}
-			clf = GridSearchCV(svm, hyperparams, cv=10, n_jobs=4)
+			
+			# hyperparams = {'C': [.5, 1., 1.5, 2., 3,4,5,8,10],
+			# 				'kernel':['rbf'],
+			# 				# 'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
+			# 				'class_weight': [None]}
+			# clf = GridSearchCV(svm, hyperparams, cv=parsed.cross_valid, n_jobs=4)
+
+			from sklearn.model_selection import RandomizedSearchCV
+			import scipy.stats as ss
+			hyperparams = {'C': ss.expon(scale=10),
+							'kernel':['rbf'],
+							# 'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
+							'class_weight': [None]}
+			clf = RandomizedSearchCV(svm, hyperparams, n_iter=500, cv=parsed.cross_valid, n_jobs=4)
+			
 			clf.fit(expr_tr, label_tr)
 			params = parse_cv_result(clf)
 		else:
-			params = {'C': 1,
+			params = {'C': 1.6,
 						'kernel': 'rbf',
 						'class_weight': None}
 
@@ -272,7 +286,7 @@ def main(argv):
 							'max_depth': [2, 3, 4],
 							'subsample': [1, .8, .5],
 							'n_estimators': [1000]}
-			clf = GridSearchCV(gb, hyperparams, cv=10, n_jobs=4)
+			clf = GridSearchCV(gb, hyperparams, cv=parsed.cross_valid, n_jobs=4)
 			clf.fit(expr_tr, label_tr)
 			params = parse_cv_result(clf)
 		else:
@@ -338,7 +352,7 @@ def main(argv):
 			ab = AdaBoostClassifier(DecisionTreeClassifier(max_depth=3))
 			hyperparams = {'learning_rate': [.01, .0075, .005, .001, .0005], 
 							'n_estimators': [1000]}
-			clf = GridSearchCV(ab, hyperparams, cv=10, n_jobs=4)
+			clf = GridSearchCV(ab, hyperparams, cv=parsed.cross_valid, n_jobs=4)
 			clf.fit(expr_tr, label_tr)
 			params = parse_cv_result(clf)
 		else:
@@ -370,7 +384,7 @@ def main(argv):
 			from sklearn.model_selection import GridSearchCV
 			gb = GaussianProcessClassifier()
 			hyperparams = {}
-			clf = GridSearchCV(gb, hyperparams, cv=10, n_jobs=4)
+			clf = GridSearchCV(gb, hyperparams, cv=parsed.cross_valid, n_jobs=4)
 			clf.fit(expr_tr, label_tr)
 			params = parse_cv_result(clf)
 		else:

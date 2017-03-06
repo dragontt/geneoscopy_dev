@@ -81,7 +81,7 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 
 
 	# ML_MODELS=(random_forest svm grad_boosting adaboost)
-	ML_MODELS=( svm )
+	# ML_MODELS=( svm )
 	for ML_MODEL in "${ML_MODELS[@]}"; do
 		echo "###" $ML_MODEL "###"
 		
