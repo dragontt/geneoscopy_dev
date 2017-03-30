@@ -123,6 +123,12 @@ def calculate_confusion_matrix(label_te, label_pred):
 	return [sens, spec, accu]
 
 
+# def calculate_cv_score(clfrf, clfsvm, clfgb, clfgp, w):
+# 	eclf = VotingClassifier(estimators=[('rf',clfrf), ('svm',clfsvm), ('gb',clfgb), ('gp',clfgp)], voting="hard", weights=w)
+# 	score = cross_val_score(eclf, expr_tr, label_tr, cv=10, scoring='accuracy')
+# 	return score.mean()
+
+
 def main(argv):
 	# parse data
 	parsed = parse_args(argv)
@@ -174,13 +180,36 @@ def main(argv):
 						optimizer="fmin_l_bfgs_b")
 
 	## define model
-	eclf = VotingClassifier(estimators=[('rf',clfrf), ('svm',clfsvm), ('gb',clfgb), ('ab',clfab), ('gp',clfgp)], voting="soft", weights=[3,5,1,1,3])
+	# n_algos = 4
+	# max_weight = 5
 
-	## cross validation
-	# for clf, label in zip([clfrf, clfsvm, clfgb, clfab, clfgp, eclf], 
-	# 	['Random forest', 'SVM', 'Grad boost', 'Adabost', 'Gauss proc', 'Ensemble']):
-	# 	scores = cross_val_score(clf, expr_tr, label_tr, cv=10, scoring='accuracy')
-	# 	print("Accuracy: %0.5f (+/- %0.5f) [%s]" % (scores.mean(), scores.std(), label))
+	# import itertools
+	# weights_comb = set()
+	# for x in itertools.permutations(range(1,(max_weight+1))*n_algos, n_algos):
+	# 	weights_comb.add(x)
+	# weights_comb = sorted(list(weights_comb))
+
+	# scores = np.zeros([max_weight]*n_algos)
+	# for w in weights_comb:
+	# 	print(w)
+	# 	indx = [w[i]-1 for i in range(len(w))]
+	# 	eclf = VotingClassifier(estimators=[('rf',clfrf), ('svm',clfsvm), ('gb',clfgb), ('gp',clfgp)], voting="hard", weights=w)
+	# 	score = cross_val_score(eclf, expr_tr, label_tr, cv=10, scoring='accuracy', n_jobs=4)
+	# 	scores[indx] = score.mean()
+	# opt_indx = np.unravel_index(np.argmax(scores), [max_weight]*n_algos)
+	# print(scores)
+	# print(opt_indx)
+	# best_weights = [i+1 for i in list(opt_indx)]
+					
+	# print("Best weights: ", best_weights)
+	# eclf = VotingClassifier(estimators=[('rf',clfrf), ('svm',clfsvm), ('gb',clfgb), ('gp',clfgp)], voting="hard", weights=best_weights)
+
+
+	eclf = VotingClassifier(estimators=[('rf',clfrf), ('svm',clfsvm), ('gb',clfgb), ('ab',clfab), ('gp',clfgp)], voting="hard", weights=[1,1,1,1,1])
+	for clf, label in zip([clfrf, clfsvm, clfgb, clfab, clfgp, eclf], 
+		['Random forest', 'SVM', 'Grad boost', 'Adabost', 'Gauss proc', 'Ensemble']):
+		scores = cross_val_score(clf, expr_tr, label_tr, cv=10, scoring='accuracy')
+		print("Accuracy: %0.5f (+/- %0.5f) [%s]" % (scores.mean(), scores.std(), label))
 	
 	## fit model
 	eclf = eclf.fit(expr_tr, label_tr)

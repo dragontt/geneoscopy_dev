@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 from sklearn.externals import joblib
 
-learning_algorithms = ['random_forest', 'svm', 'neural_net', 'grad_boosting']
+learning_algorithms = ['random_forest', 'svm', 'svr', 'neural_net', 'grad_boosting']
 
 def parse_args(argv):
 	parser = argparse.ArgumentParser(description="")
@@ -50,6 +50,30 @@ def parse_normal_stats(filename):
 	for i in range(len(stats)):
 		stats_dict[stats[i,0]] = [float(stats[i,3]), float(stats[i,4])]
 	return stats_dict
+
+
+def convert_labels(labels):
+	conv_labels = -1 * np.ones(len(labels))
+	for i in range(len(labels)):
+		if labels[i] == 'N':
+			conv_labels[i] = 0
+		elif labels[i] == 'P':
+			conv_labels[i] = 1
+		elif labels[i] == 'C':
+			conv_labels[i] = 2
+	return conv_labels
+
+
+def convert_reversed_labels(labels):
+	conv_labels = np.chararray(len(labels))
+	for i in range(len(labels)):
+		if labels[i] < .5:
+			conv_labels[i] = "N"
+		elif labels[i] >= .5 and labels[i] < 1.5:
+			conv_labels[i] = "P"
+		elif labels[i] >= 1.5:
+			conv_labels[i] = "C"
+	return conv_labels
 
 
 def calculate_confusion_matrix(label_te, label_pred):
@@ -119,6 +143,25 @@ def main(argv):
 			print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
 		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+		print "Sens",sens, "Spec",spec, "Accu",accu
+
+
+	##### SVR #####
+	elif parsed.learning_algorithm.lower() == 'svr':
+		from sklearn.svm import SVR
+
+		# predict on validation set
+		clf = joblib.load(parsed.model_filename)
+		label_predicted = clf.predict(expr_te)
+		accuracy_predicted = clf.score(expr_te, convert_labels(label_te))
+		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, convert_reversed_labels(label_predicted)[np.newaxis].T))
+
+		# print message 
+		if parsed.verbose:
+			print "sample_id\ttrue_label\tpredict_label"
+			print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		# print "Prediction accuracy:", accuracy_predicted
+		[sens, spec, accu] = calculate_confusion_matrix(label_te, convert_reversed_labels(label_predicted))
 		print "Sens",sens, "Spec",spec, "Accu",accu
 
 

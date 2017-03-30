@@ -8,7 +8,7 @@ import time
 from sklearn.externals import joblib
 import random
 
-learning_algorithms = ['random_forest', 'svm', 'neural_net', 'grad_boosting']
+learning_algorithms = ['random_forest', 'svm', 'svr', 'neural_net', 'grad_boosting']
 
 def parse_args(argv):
 	parser = argparse.ArgumentParser(description="")
@@ -107,6 +107,18 @@ def subsample_label_group(sample_id, expr, labels):
 	expr = np.delete(expr, indx_to_remove, axis=0)
 	labels = np.delete(labels, indx_to_remove)
 	return (sample_id, expr, labels)
+
+
+def convert_labels(labels):
+	conv_labels = -1 * np.ones(len(labels))
+	for i in range(len(labels)):
+		if labels[i] == 'N':
+			conv_labels[i] = 0
+		elif labels[i] == 'P':
+			conv_labels[i] = 1
+		elif labels[i] == 'C':
+			conv_labels[i] = 2
+	return conv_labels
 
 
 def calculate_confusion_matrix(label_te, label_pred):
@@ -225,7 +237,7 @@ def main(argv):
 
 			from sklearn.model_selection import RandomizedSearchCV
 			import scipy.stats as ss
-			hyperparams = {'C': ss.expon(scale=10),
+			hyperparams = {'C': ss.expon(scale=10), #randomized parameters
 							'kernel':['rbf'],
 							# 'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
 							'class_weight': [None]}
@@ -234,7 +246,7 @@ def main(argv):
 			clf.fit(expr_tr, label_tr)
 			params = parse_cv_result(clf)
 		else:
-			params = {'C': 1.6,
+			params = {'C': 1, #1.1 for 330 samples, 4.5 for 273 samples
 						'kernel': 'rbf',
 						'class_weight': None}
 
@@ -247,6 +259,49 @@ def main(argv):
 		clf.fit(expr_tr, label_tr)
 		label_pred = clf.predict(expr_tr)
 		accuracy_pred = clf.score(expr_tr, label_tr)
+		print "Training accuracy:", accuracy_pred
+
+		## save the model
+		if parsed.output_directory != None:
+			joblib.dump(clf, parsed.output_directory + 
+				parsed.learning_algorithm.lower() + '_model.pkl')
+
+
+	##### SVR #####
+	elif parsed.learning_algorithm.lower() == 'svr':
+		from sklearn.svm import SVR
+
+		if parsed.cross_valid:
+			## sklearn model selection
+			svr = SVR()
+			from sklearn.model_selection import GridSearchCV
+			
+			# hyperparams = {'C': [.5, 1., 1.5, 2., 3,4,5,8,10],
+			# 				'kernel':['rbf'],
+			# 				# 'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
+			# 				'class_weight': [None]}
+			# clf = GridSearchCV(svr, hyperparams, cv=parsed.cross_valid, n_jobs=4)
+
+			from sklearn.model_selection import RandomizedSearchCV
+			import scipy.stats as ss
+			hyperparams = {'C': ss.expon(scale=10), #randomized parameters
+							'kernel':['rbf'], # 'kernel': ['rbf', 'linear', 'poly', 'sigmoid']
+							}
+			clf = RandomizedSearchCV(svr, hyperparams, n_iter=500, cv=parsed.cross_valid, n_jobs=4)
+			
+			clf.fit(expr_tr, convert_labels(label_tr))
+			params = parse_cv_result(clf)
+		else:
+			params = {'C': 1.1, #1.1 for 330 samples, 4.5 for 273 samples
+						'kernel': 'rbf'}
+
+		## train the model
+		clf = SVR(C=params['C'], 
+					kernel=params['kernel'], 
+					verbose=False)
+		clf.fit(expr_tr, convert_labels(label_tr))
+		label_pred = clf.predict(expr_tr)
+		accuracy_pred = clf.score(expr_tr, convert_labels(label_tr)) #coefficient of determination R^2 of the prediction
 		print "Training accuracy:", accuracy_pred
 
 		## save the model
