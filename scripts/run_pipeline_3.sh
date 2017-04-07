@@ -6,7 +6,7 @@ DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_3
 GROUP=N_vs_P_vs_C
 GENE_FILTER=genecards_nanostring_civic
-NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.sst_rma.gene_symbol.txt
+NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.sst_rma.txt
 # NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
 # GENE_FILTER_LST=${DIR_DATA}/../external_data/nanostring/PanCancer_nanostring_genes_annotated.txt
 # GENE_FILTER_LST=${DIR_DATA}/../external_data/Genecards_colon_cancer/GeneCards_Nanostring_genes_annotated.txt  
@@ -61,7 +61,7 @@ Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DAT
 # Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.c_vs_n.txt N_vs_C 1 0 ${DIR_DATA}/training/top_de_genes.c_vs_n.txt
 
 
-NUM_TOP_GENES_LIST=( 200 )
+NUM_TOP_GENES_LIST=( 50 100 150 200 250 300 )
 for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 	echo "#################################"
 	echo "top genes -->" $NUM_TOP_GENES
@@ -86,13 +86,13 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 		echo "###" $ML_MODEL "###"
 		
 		echo "Preparing training/testing datasets ... "
-		# python ${DIR_SCRIPTS}/convert_expr_for_ml.py -t ${DIR_DATA}/training/top_de_genes.txt -i ${DIR_DATA}/training/chipdata.txt -o ${DIR_DATA}/training/training_set.txt
-		# python ${DIR_SCRIPTS}/convert_expr_for_ml.py -t ${DIR_DATA}/training/top_de_genes.txt -i ${DIR_DATA}/testing/chipdata.txt -o ${DIR_DATA}/testing/testing_set.txt
-		# python ${DIR_SCRIPTS}/incorporate_patient_info.py -p ${PATIENT_SHEET} -d ${DIR_DATA}/training/training_set.txt
-		# python ${DIR_SCRIPTS}/incorporate_patient_info.py -p ${PATIENT_SHEET} -d ${DIR_DATA}/testing/testing_set.txt 
+		python ${DIR_SCRIPTS}/convert_expr_for_ml.py -t ${DIR_DATA}/training/top_de_genes.txt -i ${DIR_DATA}/training/chipdata.txt -o ${DIR_DATA}/training/training_set.txt
+		python ${DIR_SCRIPTS}/convert_expr_for_ml.py -t ${DIR_DATA}/training/top_de_genes.txt -i ${DIR_DATA}/testing/chipdata.txt -o ${DIR_DATA}/testing/testing_set.txt
+		python ${DIR_SCRIPTS}/incorporate_patient_info.py -p ${PATIENT_SHEET} -d ${DIR_DATA}/training/training_set.txt
+		python ${DIR_SCRIPTS}/incorporate_patient_info.py -p ${PATIENT_SHEET} -d ${DIR_DATA}/testing/testing_set.txt 
 
-		# python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/training/chipdata_full.txt -o ${DIR_DATA}/training/training_set_full.txt
-		# python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/testing/chipdata_full.txt -o ${DIR_DATA}/testing/testing_set_full.txt
+		python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/training/chipdata_full.txt -o ${DIR_DATA}/training/training_set_full.txt
+		python ${DIR_SCRIPTS}/convert_expr_for_ml.py -i ${DIR_DATA}/testing/chipdata_full.txt -o ${DIR_DATA}/testing/testing_set_full.txt
 
 		echo "Training models ... "
 		rm -rf $ML_MODEL
@@ -102,7 +102,7 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 		# ###
 
 		echo "Testing prediction ... "
-		python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -f ${DIR_DATA}/testing/testing_set_full.txt -a $ML_MODEL -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl -s ${DIR_DATA}/training/predictor_normal_stats.txt -v True
+		python ${DIR_SCRIPTS}/crc_prediction.py -i ${DIR_DATA}/testing/testing_set.txt -f ${DIR_DATA}/testing/testing_set_full.txt -a $ML_MODEL -m ${DIR_DATA}/training/${ML_MODEL}/${ML_MODEL}_model.pkl -s ${DIR_DATA}/training/predictor_normal_stats.txt
 		echo ""
 	done
 
