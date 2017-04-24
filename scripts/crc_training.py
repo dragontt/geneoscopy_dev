@@ -8,7 +8,7 @@ import time
 from sklearn.externals import joblib
 import random
 
-learning_algorithms = ['random_forest', 'svm', 'svr', 'neural_net', 'grad_boosting']
+learning_algorithms = ['random_forest', 'svm', 'nu_svm', 'svr', 'neural_net', 'grad_boosting']
 
 def parse_args(argv):
 	parser = argparse.ArgumentParser(description="")
@@ -220,7 +220,7 @@ def main(argv):
 		num_most_important_gene = min(num_most_important_gene, len(gene_score))
 
 
-	##### SVM #####
+	##### C-SVM #####
 	elif parsed.learning_algorithm.lower() == 'svm':
 		from sklearn.svm import SVC
 
@@ -246,12 +246,59 @@ def main(argv):
 			clf.fit(expr_tr, label_tr)
 			params = parse_cv_result(clf)
 		else:
-			params = {'C': 1, #1.1 for 330 samples, 4.5 for 273 samples
+			params = {'C': 1.2, #1.1 for 330 samples, 4.5 for 273 samples
 						'kernel': 'rbf',
 						'class_weight': None}
 
 		## train the model
 		clf = SVC(C=params['C'], 
+					kernel=params['kernel'], 
+					class_weight=params['class_weight'],
+					probability=True, 
+					verbose=False)
+		clf.fit(expr_tr, label_tr)
+		label_pred = clf.predict(expr_tr)
+		accuracy_pred = clf.score(expr_tr, label_tr)
+		print "Training accuracy:", accuracy_pred
+
+		## save the model
+		if parsed.output_directory != None:
+			joblib.dump(clf, parsed.output_directory + 
+				parsed.learning_algorithm.lower() + '_model.pkl')
+
+
+	##### Nu-SVM #####
+	elif parsed.learning_algorithm.lower() == 'nu_svm':
+		from sklearn.svm import NuSVC
+
+		if parsed.cross_valid:
+			## sklearn model selection
+			from sklearn.model_selection import GridSearchCV
+			svm = NuSVC()
+			
+			# hyperparams = {'C': [.5, 1., 1.5, 2., 3,4,5,8,10],
+			# 				'kernel':['rbf'],
+			# 				# 'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
+			# 				'class_weight': [None]}
+			# clf = GridSearchCV(svm, hyperparams, cv=parsed.cross_valid, n_jobs=4)
+
+			from sklearn.model_selection import RandomizedSearchCV
+			import scipy.stats as ss
+			hyperparams = {'nu': ss.expon(scale=10), #randomized parameters
+							'kernel':['rbf'],
+							# 'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
+							'class_weight': [None]}
+			clf = RandomizedSearchCV(svm, hyperparams, n_iter=500, cv=parsed.cross_valid, n_jobs=4)
+			
+			clf.fit(expr_tr, label_tr)
+			params = parse_cv_result(clf)
+		else:
+			params = {'nu': 0.82, 
+						'kernel': 'rbf',
+						'class_weight': 'balanced'}
+
+		## train the model
+		clf = NuSVC(nu=params['nu'], 
 					kernel=params['kernel'], 
 					class_weight=params['class_weight'],
 					probability=True, 
@@ -338,7 +385,7 @@ def main(argv):
 			from sklearn.model_selection import GridSearchCV
 			gb = GradientBoostingClassifier()
 			hyperparams = {'learning_rate': [.01, .0075, .005, .001, .0005], 
-							'max_depth': [2, 3, 4],
+							'max_depth': [3],
 							'subsample': [1, .8, .5],
 							'n_estimators': [1000]}
 			clf = GridSearchCV(gb, hyperparams, cv=parsed.cross_valid, n_jobs=4)

@@ -6,6 +6,26 @@ import matplotlib
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 
+
+def parse_TCs(filename):
+	f = open(filename, 'r')
+	lines = f.readlines()
+	f.close()
+
+	TCs = []
+	for i in range(len(lines)):
+		line = lines[i].strip().split("\t")
+		if len(line) > 2:
+			for tc in line[2].split(","):
+				TCs.append(tc)
+	return TCs
+
+
+def filter_expr(expr, all_genes, filtered_genes):
+	indx = [i for i in range(len(all_genes)) if all_genes[i] in filtered_genes]
+	return expr[indx,:]
+
+
 def plot_replicates(reps_dict, sample_ids, data, dir_figures):
 	for k in reps_dict.keys():
 		rep_indx = []
@@ -25,7 +45,10 @@ def plot_replicates(reps_dict, sample_ids, data, dir_figures):
 		plt.text(15, 1, '$adj. R^2 = %.3f$' % results.rsquared_adj)
 		plt.xlabel('Replicate 1')
 		plt.ylabel('Replicate 2')
+		plt.xlim([0,25])
+		plt.ylim([0,25])
 		plt.gcf().subplots_adjust(bottom=0.15)
+		# plt.tight_layout()
 		plt.savefig(dir_figures+'/'+k+'.jpg', format='jpg')
 
 
@@ -51,6 +74,7 @@ freezer_reps = {'freezer.C36-4': ['27907', '27589'],
 
 dir_project = '/Users/KANG/geneoscopy_dev/data/20170406_combined_projects_360samples/'
 filename_expr = dir_project + 'gc-correction.scale-intensities.rma-bg.quant-norm.pm-only.med-polish.summary.txt'
+filename_filtered_TCs = dir_project + '../external_data/Genecards_colon_cancer/GeneCards_Nanostring_CIViC_genes_annotated.txt'
 
 ##load data
 data = np.loadtxt(filename_expr, dtype=str, delimiter='\t')
@@ -58,13 +82,16 @@ samples = data[0,1:]
 genes = data[1:,0]
 data = np.array(data[1:,1:], dtype=float)
 
+filtered_TCs = parse_TCs(filename_filtered_TCs)
+data = filter_expr(data, genes, filtered_TCs)
+
 ##parse sample IDs
 sample_ids = np.empty((len(samples),1), dtype='|S20')
 for i in range(len(samples)):
 	sample_ids[i] = re.split('\s|\.', samples[i])[0]
 
 ##plot replicates
-plot_replicates(tech_reps, sample_ids, data, dir_project+'/figures')
-plot_replicates(bio_reps, sample_ids, data, dir_project+'/figures')
-plot_replicates(freezer_reps, sample_ids, data, dir_project+'/figures')
+plot_replicates(tech_reps, sample_ids, data, dir_project+'/figures_filtered_TCs')
+plot_replicates(bio_reps, sample_ids, data, dir_project+'/figures_filtered_TCs')
+plot_replicates(freezer_reps, sample_ids, data, dir_project+'/figures_filtered_TCs')
 

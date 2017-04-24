@@ -146,6 +146,26 @@ def main(argv):
 		print "Sens",sens, "Spec",spec, "Accu",accu
 
 
+	##### Nu-SVM #####
+	elif parsed.learning_algorithm.lower() == 'nu_svm':
+		from sklearn.svm import NuSVC
+
+		# predict on validation set
+		clf = joblib.load(parsed.model_filename)
+		label_predicted = clf.predict(expr_te)
+		probability_predicted = clf.predict_proba(expr_te)
+		accuracy_predicted = clf.score(expr_te, label_te)
+		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
+
+		# print message 
+		if parsed.verbose:
+			print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+			print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
+		# print "Prediction accuracy:", accuracy_predicted
+		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+		print "Sens",sens, "Spec",spec, "Accu",accu
+
+
 	##### SVR #####
 	elif parsed.learning_algorithm.lower() == 'svr':
 		from sklearn.svm import SVR
