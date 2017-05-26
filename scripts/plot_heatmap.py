@@ -24,8 +24,16 @@ def parse_args(argv):
 
 def compute_log2_fc(expr, label):
 	wt_indices = np.where(label=='0')[0]
-	wt_mean = np.mean(expr[:, wt_indices], axis=1)[np.newaxis].T
-	return np.log2(expr/wt_mean)
+	# wt_mean = np.mean(expr[:, wt_indices], axis=1)[np.newaxis].T
+	wt_median = np.median(expr[:, wt_indices], axis=1)[np.newaxis].T
+	return np.log2(expr/wt_median)
+
+
+def compute_fc(expr, label):
+	wt_indices = np.where(label=='0')[0]
+	# wt_mean = np.mean(expr[:, wt_indices], axis=1)[np.newaxis].T
+	wt_median = np.median(expr[:, wt_indices], axis=1)[np.newaxis].T
+	return expr/wt_median
 
 
 def rank_de_genes(expr, label):
@@ -58,15 +66,24 @@ def main(argv):
 
 	## Transform from log2 to regular expr values
 	expr = np.array(raw_data[1:, 1:], dtype=float)
-	# expr = np.power(2, expr)
+	# expr = np.array(raw_data[1:, 2:], dtype=float)
+	expr = np.power(2, expr)
 
 	## Parse CONTROL sample label
 	label = np.empty(len(sample_id), dtype=str)
+	label_N = []
+	label_P = []
+	label_C = []
 	for i in range(len(sample_id)):
 		if sample_id[i].endswith('.N'):
 			label[i] = '0'
-		else:
+			label_N.append(i)
+		elif sample_id[i].endswith('.P'):
 			label[i] = '1'
+			label_P.append(i)
+		elif sample_id[i].endswith('.C'):
+			label[i] = '1'
+			label_C.append(i)
 
 	## Differnetial expression analyssi
 	if parsed.method.lower() == 'limma': # Limma de analysis  
@@ -81,6 +98,7 @@ def main(argv):
 		for i in range(top_rank):
 			top_indices[i] = np.where(gene_id == limma_genes[i])[0][0]
 		expr_log2_fc = compute_log2_fc(expr, label)
+		# expr_fc = compute_fc(expr, label)
 
 	elif parsed.method.lower() == 'fld': # Fisher's linear descriminant
 		top_rank = parsed.top_rank
@@ -106,8 +124,28 @@ def main(argv):
 		sys.exit('No DE analysis method given.')
 
 	## Analyze individual DE fold change 
-	heatmap(expr_log2_fc[top_indices,:], gene_id[top_indices], sample_id, 'average', 'average', 'euclidean', 'euclidean', 'yellow_black_blue', parsed.dir_output +'top_'+ str(top_rank) +'_'+ parsed.method +'_genes') 
-	# heatmap(expr_log2_fc[top_indices,:], limma_genes_for_display, sample_id, 'average', 'average', 'euclidean', 'euclidean', 'yellow_black_blue', parsed.dir_output +'top_'+ str(top_rank) +'_'+ parsed.method +'_genes')
+	val_thld = 1.2 #.8
+	expr_to_plot = expr_log2_fc[top_indices,:]
+	# expr_to_plot = expr_fc[top_indices,:]
+	expr_to_plot[expr_to_plot > val_thld] = val_thld
+	expr_to_plot[expr_to_plot < -val_thld] = -val_thld
+
+	label_C_subindx = [10, 24, 71, 87, 8, 13, 9, 0, 1, 73, 80, 34, 38, 70, 78, 20, 88, 28, 63, 18, 79, 43, 4, 26, 52, 68, 31, 67, 86, 81, 33, 84, 64, 37, 41, 83, 74, 93, 23, 75, 2, 92, 82, 14, 51, 57, 7, 17, 5, 30, 77, 15, 21, 47, 48, 72, 22, 89, 66, 69, 39, 90, 45, 32, 61, 19, 65, 49, 54, 60, 27, 40, 42, 29, 85, 91, 46, 44, 25, 58, 35, 36, 53, 56, 62, 59, 6, 76, 50, 55, 16, 3, 11, 12]
+	label_P_subindx = [14, 68, 77, 34, 78, 60, 71, 69, 65, 4, 52, 10, 1, 67, 75, 0, 53, 66, 79, 26, 73, 12, 28, 32, 46, 9, 15, 19, 23, 25, 11, 63, 17, 45, 44, 5, 51, 18, 56, 6, 58, 70, 41, 72, 59, 62, 64, 36, 48, 61, 24, 76, 50, 74, 27, 30, 39, 31, 55, 13, 3, 7, 81, 16, 33, 40, 57, 21, 49, 54, 22, 47, 80, 2, 38, 42, 29, 35, 37, 43, 8, 20]	
+	label_N_subindx = [37, 64, 21, 40, 6, 31, 19, 23, 27, 17, 74, 69, 26, 36, 29, 84, 46, 56, 48, 61, 49, 68, 13, 60, 0, 14, 20, 7, 18, 53, 54, 58, 33, 85, 65, 52, 88, 86, 76, 75, 81, 83, 11, 63, 80, 10, 66, 72, 28, 67, 35, 44, 4, 38, 73, 32, 59, 78, 57, 79, 39, 41, 30, 45, 47, 22, 24, 12, 15, 71, 55, 70, 82, 9, 51, 87, 43, 77, 5, 50, 3, 16, 25, 34, 42, 62, 8, 1, 2]
+	indx_samples = np.append(np.append(
+					np.array(label_C, dtype=int)[label_C_subindx],
+					np.array(label_P, dtype=int)[label_P_subindx]),
+					np.array(label_N, dtype=int)[label_N_subindx])
+
+	# indx_samples = label_C + label_P + label_N
+	# indx_samples = label_C
+
+	expr_to_plot = expr_to_plot[:, indx_samples]
+	sample_id = sample_id[indx_samples]
+
+	# heatmap(expr_to_plot, gene_id[top_indices], sample_id, 'average', 'average', 'euclidean', 'euclidean', 'yellow_black_blue', parsed.dir_output +'top_'+ str(top_rank) +'_'+ parsed.method +'_genes') 
+	heatmap(expr_to_plot, gene_id[top_indices], sample_id, 'average', None, 'euclidean', None, 'yellow_black_blue', parsed.dir_output +'new.top_'+ str(top_rank) +'_'+ parsed.method +'_genes') 
 
 
 if __name__ == "__main__":

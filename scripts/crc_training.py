@@ -373,6 +373,19 @@ def main(argv):
 				parsed.learning_algorithm.lower() + '_model.pkl')
 
 
+	##### Naive Bayes #####
+	elif parsed.learning_algorithm.lower() == 'naive_bayes':
+		from sklearn.naive_bayes import GaussianNB	
+		clf = GaussianNB()
+		clf.fit(expr_tr, label_tr)
+		label_pred = clf.predict(expr_tr)
+		accuracy_pred = clf.score(expr_tr, label_tr)
+		print "Training accuracy:", clf.score(expr_tr, label_tr)
+		if parsed.output_directory != None:
+			joblib.dump(clf, parsed.output_directory + 
+				parsed.learning_algorithm.lower() + '_model.pkl')
+
+
 	##### Gradient Boosting #####		
 	elif parsed.learning_algorithm.lower() == 'grad_boosting':
 		from sklearn.ensemble import GradientBoostingClassifier

@@ -3,10 +3,10 @@ DIR_SCRIPTS=/Users/KANG/geneoscopy_dev/scripts
 
 ##### INPUT VARIABLES #####
 
-DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_3
-GROUP=N_vs_P_vs_C
+DIR_DATA=/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_2
+GROUP=N_vs_C
 GENE_FILTER=genecards_nanostring_civic
-NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.sst_rma.txt
+NORMALIZED_CHIPDATA_FULL=${DIR_DATA}/chipdata_rma.expression_console.sst_rma.two_group.txt
 # NORMALIZED_CHIPDATA=${DIR_DATA}/chipdata_rma.expression_console.${GENE_FILTER}.txt
 # GENE_FILTER_LST=${DIR_DATA}/../external_data/nanostring/PanCancer_nanostring_genes_annotated.txt
 # GENE_FILTER_LST=${DIR_DATA}/../external_data/Genecards_colon_cancer/GeneCards_Nanostring_genes_annotated.txt  
@@ -14,7 +14,7 @@ GENE_FILTER_LST=${DIR_DATA}/../external_data/Genecards_colon_cancer/GeneCards_Na
 # QC_TABLE=${DIR_DATA}/QC_table_combined_abcdefghi.txt
 # SAMPLE_SHEET=${DIR_DATA}/sample_sheet_combined_abcdefghi.txt
 PATIENT_SHEET=${DIR_DATA}/patient_info_sheet.txt
-VALID_CHIPS=${DIR_DATA}/valid_chips.txt
+VALID_CHIPS=${DIR_DATA}/valid_chips.two_group.txt
 # CRC_PREDICTORS=${DIR_DATA}/../external_data/CIViC/civic_selected_genes_TCs.txt
 CV_FOLDS=10
 
@@ -39,8 +39,11 @@ python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}
 python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
 
-echo "Analyzing DE genes ... "
-Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
+
+
+
+# echo "Analyzing DE genes ... "
+# Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
 
 # python ${DIR_SCRIPTS}/combine_de_genes.py ${DIR_DATA}/training/top_de_genes.constrained_gene_set.txt ${DIR_DATA}/training/top_de_genes.all_gene_symbol.txt 0.0234 0.0004 ${DIR_DATA}/training/top_de_genes.txt
 # wc -l ${DIR_DATA}/training/top_de_genes.txt
@@ -61,7 +64,7 @@ Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DAT
 # Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.c_vs_n.txt N_vs_C 1 0 ${DIR_DATA}/training/top_de_genes.c_vs_n.txt
 
 
-NUM_TOP_GENES_LIST=( 200 )
+NUM_TOP_GENES_LIST=( 25 50 100 150 200 250 300 350 400 500 )
 for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 	echo "#################################"
 	echo "top genes -->" $NUM_TOP_GENES
@@ -80,8 +83,8 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 	rm ${DIR_DATA}/training/tmp.txt
 
 
-	# ML_MODELS=(random_forest svm grad_boosting adaboost gauss_process)
-	ML_MODELS=( svm )
+	# ML_MODELS=(random_forest svm svr grad_boosting adaboost gauss_process)
+	ML_MODELS=( grad_boosting )
 	for ML_MODEL in "${ML_MODELS[@]}"; do
 		echo "###" $ML_MODEL "###"
 		

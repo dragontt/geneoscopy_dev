@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 from sklearn.externals import joblib
 
-learning_algorithms = ['random_forest', 'svm', 'svr', 'neural_net', 'grad_boosting']
+learning_algorithms = ['random_forest', 'svm', 'svr', 'neural_net', 'naive_bayes', 'grad_boosting']
 
 def parse_args(argv):
 	parser = argparse.ArgumentParser(description="")
@@ -97,7 +97,7 @@ def main(argv):
 	parsed = parse_args(argv)
 
 	[gene_id, sample_id, expr_te, label_te] = parse_data(parsed.input_expr, 1, 2)
-	[gene_id_full, foo, expr_te_full, foo] = parse_data(parsed.input_expr_full, 1, 2)
+	# [gene_id_full, foo, expr_te_full, foo] = parse_data(parsed.input_expr_full, 1, 2)
 
 	label_unique= np.unique(label_te)
 	label_count = np.array([len(np.where(label_te == l)[0]) for l in label_unique])
@@ -195,6 +195,25 @@ def main(argv):
 		accuracy_predicted = len([label_predicted[i] for i in range(len(label_predicted)) if (label_predicted[i] == label_te[i])]) / float(len(label_predicted))
 
 		# print message 
+		# print "Prediction accuracy:", accuracy_predicted
+		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+		print "Sens",sens, "Spec",spec, "Accu",accu
+
+
+	##### Naive Bayes #####
+	elif parsed.learning_algorithm.lower() == 'naive_bayes':
+		from sklearn.naive_bayes import GaussianNB	
+
+		clf = joblib.load(parsed.model_filename)
+		label_predicted = clf.predict(expr_te)
+		probability_predicted = clf.predict_proba(expr_te)
+		accuracy_predicted = clf.score(expr_te, label_te)
+		summary = np.hstack((sample_id[np.newaxis].T, label_te[np.newaxis].T, label_predicted[np.newaxis].T, probability_predicted))
+		
+		#print messages
+		if parsed.verbose:
+			print "sample_id\ttrue_label\tpredict_label\t", "\t".join(str(x) for x in clf.classes_)
+			print '\n'.join('\t'.join(str(x) for x in row) for row in summary)
 		# print "Prediction accuracy:", accuracy_predicted
 		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
 		print "Sens",sens, "Spec",spec, "Accu",accu

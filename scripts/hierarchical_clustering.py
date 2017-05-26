@@ -76,7 +76,7 @@ def heatmap(x, row_header, column_header, row_method,
 
     ### Scale the Matplotlib window size
     default_window_hight = 12
-    default_window_width = 8.5
+    default_window_width = 12
     default_window_scale = 1.5
     fig = pylab.figure(figsize=(default_window_width*default_window_scale,default_window_hight*default_window_scale)) ### could use m,n to scale here
     color_bar_w = 0.015 ### Sufficient size to show
@@ -122,7 +122,7 @@ def heatmap(x, row_header, column_header, row_method,
         D2 = dist.squareform(d2)
         ax2 = fig.add_axes([ax2_x, ax2_y, ax2_w, ax2_h], frame_on=True)
         Y2 = sch.linkage(D2, method=column_method, metric=column_metric) ### array-clustering metric - 'average', 'single', 'centroid', 'complete'
-        Z2 = sch.dendrogram(Y2)
+        Z2 = sch.dendrogram(Y2, color_threshold=0)
         ind2 = sch.fcluster(Y2,0.7*max(Y2[:,2]),'distance') ### This is the default behavior of dendrogram
         ax2.set_xticks([]) ### Hides ticks
         ax2.set_yticks([])
@@ -138,7 +138,7 @@ def heatmap(x, row_header, column_header, row_method,
         D1 = dist.squareform(d1)  # full matrix
         ax1 = fig.add_axes([ax1_x, ax1_y, ax1_w, ax1_h], frame_on=True) # frame_on may be False
         Y1 = sch.linkage(D1, method=row_method, metric=row_metric) ### gene-clustering metric - 'average', 'single', 'centroid', 'complete'
-        Z1 = sch.dendrogram(Y1, orientation='right')
+        Z1 = sch.dendrogram(Y1, orientation='right', color_threshold=0)
         ind1 = sch.fcluster(Y1,0.7*max(Y1[:,2]),'distance') ### This is the default behavior of dendrogram
         ax1.set_xticks([]) ### Hides ticks
         ax1.set_yticks([])
@@ -152,7 +152,7 @@ def heatmap(x, row_header, column_header, row_method,
     xt = x
     if column_method != None:
         idx2 = Z2['leaves'] ### apply the clustering for the array-dendrograms to the actual matrix data
-        xt = xt[:,idx2]
+        print idx2
         ind2 = ind2[idx2]
         # ind2 = ind2[:,idx2] ### reorder the flat cluster to match the order of the leaves the dendrogram
     if row_method != None:
@@ -235,7 +235,7 @@ def heatmap(x, row_header, column_header, row_method,
     # print 'Exporting:',filename
     # filename = filename[:-3]+'png'
     # pylab.savefig(filename, dpi=200) #,dpi=200
-    pylab.show()
+    # pylab.show()
 
 def getColorRange(x):
     """ Determines the range of colors, centered at zero, for normalizing cmap """

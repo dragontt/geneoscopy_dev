@@ -111,7 +111,7 @@ for i in range(len(labels)):
 
 for g in cg_genes.keys():
 	print "Plotting", g
-	plt.figure(num=None, figsize=(20, 6), dpi=80,)
+	plt.figure(num=None, figsize=(20, 6), dpi=80)
 	bp = plt.boxplot(gene_expr[g], positions=locs, patch_artist=True) 
 	
 	colors = colors_arr*(len(bs))

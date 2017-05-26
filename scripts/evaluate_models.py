@@ -14,6 +14,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB
 
 
 def split_expr(expr, label_split):
@@ -66,9 +68,57 @@ def calculate_confusion_matrix(label_te, label_pred):
 	return [sens, spec, accu]
 
 
+def calculate_poly_detection(label_te, label_pred):
+	pred_pos = np.append(np.where(label_pred == "P")[0], np.where(label_pred == "C")[0])
+	pred_neg = np.where(label_pred == "N")[0]
+	te_pos = np.where(label_te == "P")[0]
+	te_neg = np.where(label_te == "N")[0]
+	tps = len(np.intersect1d(pred_pos, te_pos)) 
+	fps = len(np.intersect1d(pred_pos, te_neg)) 
+	fns = len(np.intersect1d(pred_neg, te_pos))
+	tns = len(np.intersect1d(pred_neg, te_neg))
+	sens = tps/float(len(te_pos))
+	spec = tns/float(len(te_neg))
+	return [sens, spec]
+
+
+def calculate_cancer_detection(label_te, label_pred):
+	pred_pos = np.append(np.where(label_pred == "P")[0], np.where(label_pred == "C")[0])
+	pred_neg = np.where(label_pred == "N")[0]
+	te_pos = np.where(label_te == "C")[0]
+	te_neg = np.where(label_te == "N")[0]
+	tps = len(np.intersect1d(pred_pos, te_pos)) 
+	fps = len(np.intersect1d(pred_pos, te_neg)) 
+	fns = len(np.intersect1d(pred_neg, te_pos))
+	tns = len(np.intersect1d(pred_neg, te_neg))
+	sens = tps/float(len(te_pos))
+	spec = tns/float(len(te_neg))
+	return [sens, spec]
+
+
+def print_result(algo_name, clf, expr_te, label_te):
+	label_predicted = clf.predict(expr_te)
+	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+	sys.stdout.write('%s\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
+					(algo_name, sens, spec, accu, (sens+spec)/2))
+
+
+def print_result2(algo_name, clf, expr_te, label_te):
+	label_predicted = clf.predict(expr_te)
+	# [sens, spec] = calculate_poly_detection(label_te, label_predicted)
+	[sens, spec] = calculate_cancer_detection(label_te, label_predicted)
+	sys.stdout.write('%s\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
+					(algo_name, sens, spec, 0, (sens+spec)/2))
+
+
 ## Arguments
 N = int(sys.argv[1])
-
+S = str(sys.argv[2]) ## True to load the N evaluation sets
+S = True if S.lower() == 'true' else False
+if S: 
+	sys.stderr.write("Loading existed json\n")
+else:
+	sys.stderr.write("Generating new json\n")
 
 ## Project directories
 dir_proj = '/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_3/'
@@ -88,33 +138,44 @@ labels = expr_full[1:,1]
 
 ## Randomly select N times
 label_keys = ['C', 'P', 'N']
-label_dict = {}
+
+if S:
+	with open(dir_proj + '/validation/random_split_indices.json') as json_reader:
+		label_dict = json.load(json_reader)
+	for k in label_dict.keys(): ## replace the str key with numberic key
+		label_dict[int(k)] = label_dict[k]
+		del label_dict[k]
+else:
+	label_dict = {}
+
 
 os.system('rm -rf tmp/; mkdir tmp/')
 
 for i in range(N):
-	print '##### Set '+ str(i+1) + ' #####'
+	sys.stdout.write('##### Set '+ str(i+1) + ' #####\n')
+	sys.stderr.write('##### Set '+ str(i+1) + ' #####\n')
 
-	## Randomly split
-	label_dict[i] = {'training':{}, 'testing':{}}
-	for k in label_keys:
-		indx = np.where(labels == k)[0]
-		indx_tr = np.random.choice(indx, size=np.floor(len(indx)*.8), replace=False)
-		indx_te = np.setdiff1d(indx, indx_tr)
-		label_dict[i]['training'][k] = list(indx_tr)
-		label_dict[i]['testing'][k] = list(indx_te)
+	if not S:
+		## Randomly split
+		label_dict[i] = {'training':{}, 'testing':{}}
+		for k in label_keys:
+			indx = np.where(labels == k)[0]
+			indx_tr = np.random.choice(indx, size=np.floor(len(indx)*.8), replace=False)
+			indx_te = np.setdiff1d(indx, indx_tr)
+			label_dict[i]['training'][k] = list(indx_tr)
+			label_dict[i]['testing'][k] = list(indx_te)
 
 	## LIMMA wrapper
-	write_valid_chips(label_dict[i]['training'], samples, labels, 'tmp/valid_chips_'+str(i)+'.txt')
+	# write_valid_chips(label_dict[i]['training'], samples, labels, 'tmp/valid_chips_'+str(i)+'.txt')
 
-	while not os.path.isfile('tmp/valid_chips_'+str(i)+'.txt'):
-		time.sleep(1)
-	# print('#analyzing DE genes for this set ...')
-	os.system('Rscript ../../../scripts/de_analysis.r ../training/chipdata.txt tmp/valid_chips_'+str(i)+'.txt N_vs_P_vs_C 1 0 tmp/top_de_genes_'+str(i)+'.txt; cp tmp/top_de_genes_'+str(i)+'.txt tmp/tmp.txt; head -'+ str(T+1) +' tmp/tmp.txt > tmp/top_de_genes_'+str(i)+'.txt; rm tmp/tmp.txt')
+	# while not os.path.isfile('tmp/valid_chips_'+str(i)+'.txt'):
+	# 	time.sleep(1)
+	# os.system('Rscript ../../../scripts/de_analysis.r ../training/chipdata.txt tmp/valid_chips_'+str(i)+'.txt N_vs_P_vs_C 1 0 tmp/top_de_genes_'+str(i)+'.txt; cp tmp/top_de_genes_'+str(i)+'.txt tmp/tmp.txt; head -'+ str(T+1) +' tmp/tmp.txt > tmp/top_de_genes_'+str(i)+'.txt; rm tmp/tmp.txt')
 
-	while not os.path.isfile('tmp/top_de_genes_'+str(i)+'.txt'):
-		time.sleep(5)
-	de_genes = load_de_genes('tmp/top_de_genes_'+str(i)+'.txt')
+	# while not os.path.isfile('tmp/top_de_genes_'+str(i)+'.txt'):
+	# 	time.sleep(1)
+	# de_genes = load_de_genes('tmp/top_de_genes_'+str(i)+'.txt')
+	de_genes = load_de_genes('../training/top_de_genes.txt')
 	expr = filter_features(expr_full, de_genes)
 
 
@@ -150,11 +211,8 @@ for i in range(N):
 	clf.fit(expr_tr, label_tr)
 
 	## test the model
-	label_predicted = clf.predict(expr_te)
-	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	sys.stdout.write('Random forest\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
-					(sens, spec, accu, (sens+spec)/2))
-
+	# print_result("Random forest", clf, expr_te, label_te)
+	print_result2("Random forest", clf, expr_te, label_te)
 
 
 	## C-SVM
@@ -198,9 +256,8 @@ for i in range(N):
 	# clf.fit(expr_tr, label_tr)
 
 	# ## test the model
-	# label_predicted = clf.predict(expr_te)
-	# [sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	# print 'C-SVM\t', sens, spec, accu
+	# print_result("C-SVM", clf, expr_te, label_te)
+	# print_result2("C-SVM", clf, expr_te, label_te)
 
 
 	## Nu-SVM
@@ -244,49 +301,46 @@ for i in range(N):
 	clf.fit(expr_tr, label_tr)
 
 	## test the model
-	label_predicted = clf.predict(expr_te)
-	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	sys.stdout.write('Nu-SVM\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
-					(sens, spec, accu, (sens+spec)/2))
+	# print_result("Nu-SVM", clf, expr_te, label_te)
+	print_result2("Nu-SVM", clf, expr_te, label_te)
 
 
 
 
-	# ## Gradient boosting
-	# if cross_valid:
-	# 	## sklearn model selection
-	# 	from sklearn.model_selection import GridSearchCV
-	# 	gb = GradientBoostingClassifier()
-	# 	hyperparams = {'learning_rate': [.01, .0075, .005, .001, .0005], 
-	# 					'max_depth': [3],
-	# 					'subsample': [1, .8, .5],
-	# 					'n_estimators': [1000]}
-	# 	clf = GridSearchCV(gb, hyperparams, cv=parsed.cross_valid, n_jobs=4)
-	# 	clf.fit(expr_tr, label_tr)
-	# 	params = parse_cv_result(clf)
-	# else:
-	# 	params = {'learning_rate': 1, 
-	# 				'max_depth': 5,
-	# 				'subsample': 1.0,
-	# 				'n_estimators': 50}
+	## Gradient boosting
 
-	# ## prepare data
-	# label_split = label_dict[i]
-	# [expr_tr, label_tr, expr_te, label_te] = split_expr(expr, label_split)
+	if cross_valid:
+		## sklearn model selection
+		from sklearn.model_selection import GridSearchCV
+		gb = GradientBoostingClassifier()
+		hyperparams = {'learning_rate': [.01, .0075, .005, .001, .0005], 
+						'max_depth': [3],
+						'subsample': [1, .8, .5],
+						'n_estimators': [1000]}
+		clf = GridSearchCV(gb, hyperparams, cv=parsed.cross_valid, n_jobs=4)
+		clf.fit(expr_tr, label_tr)
+		params = parse_cv_result(clf)
+	else:
+		params = {'learning_rate': 1, 
+					'max_depth': 5,
+					'subsample': 1.0,
+					'n_estimators': 50}
+
+	## prepare data
+	label_split = label_dict[i]
+	[expr_tr, label_tr, expr_te, label_te] = split_expr(expr, label_split)
 	
-	# ## train the model
-	# clf = GradientBoostingClassifier(learning_rate=params['learning_rate'], 
-	# 									n_estimators=params['n_estimators'], 
-	# 									max_depth=params['max_depth'], 
-	# 									subsample=params['subsample'], 
-	# 									verbose=False)
-	# clf.fit(expr_tr, label_tr)
+	## train the model
+	clf = GradientBoostingClassifier(learning_rate=params['learning_rate'], 
+										n_estimators=params['n_estimators'], 
+										max_depth=params['max_depth'], 
+										subsample=params['subsample'], 
+										verbose=False)
+	clf.fit(expr_tr, label_tr)
 
-	# #test the model
-	# label_predicted = clf.predict(expr_te)
-	# [sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	# sys.stdout.write('Grad boost\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
-	# 				(sens, spec, accu, (sens+spec)/2))
+	#test the model
+	# print_result("Gradient boost", clf, expr_te, label_te)
+	print_result2("Gradient boost", clf, expr_te, label_te)
 
 
 
@@ -317,40 +371,72 @@ for i in range(N):
 	clf.fit(expr_tr, label_tr)
 
 	#test the model
-	label_predicted = clf.predict(expr_te)
-	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	sys.stdout.write('AdaBoost\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
-					(sens, spec, accu, (sens+spec)/2))
+	# print_result("AdaBoost", clf, expr_te, label_te)
+	print_result2("AdaBoost", clf, expr_te, label_te)
 
 
 
-	## Gaussian process
 
-	if cross_valid:
-		## sklearn model selection
-		from sklearn.model_selection import GridSearchCV
-		gb = GaussianProcessClassifier()
-		hyperparams = {}
-		clf = GridSearchCV(gb, hyperparams, cv=parsed.cross_valid, n_jobs=4)
-		clf.fit(expr_tr, label_tr)
-		params = parse_cv_result(clf)
-	else:
-		params = {}
+	# ## Neural network
+
+	# ## prepare data
+	# label_split = label_dict[i]
+	# [expr_tr, label_tr, expr_te, label_te] = split_expr(expr, label_split)
+	
+	# ## train the model
+	# clf = MLPClassifier(solver='adam', alpha=.0001, 
+	# 					hidden_layer_sizes=(5, 2))
+	# clf.fit(expr_tr, label_tr)
+
+	# #test the model
+	# print_result("Neural net", clf, expr_te, label_te)
+	# # print_result2("Neural net", clf, expr_te, label_te)
+
+
+
+
+	# ## Gaussian process
+
+	# if cross_valid:
+	# 	## sklearn model selection
+	# 	from sklearn.model_selection import GridSearchCV
+	# 	gb = GaussianProcessClassifier()
+	# 	hyperparams = {}
+	# 	clf = GridSearchCV(gb, hyperparams, cv=parsed.cross_valid, n_jobs=4)
+	# 	clf.fit(expr_tr, label_tr)
+	# 	params = parse_cv_result(clf)
+	# else:
+	# 	params = {}
+
+	# ## prepare data
+	# label_split = label_dict[i]
+	# [expr_tr, label_tr, expr_te, label_te] = split_expr(expr, label_split)
+	
+	# ## train the model
+	# clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=1.0), 
+	# 								optimizer="fmin_l_bfgs_b")
+	# clf.fit(expr_tr, label_tr)
+
+	# #test the model
+	# print_result("Gauss process", clf, expr_te, label_te)
+	# print_result2("Gauss process", clf, expr_te, label_te)
+
+
+
+	## Naive Bayes
 
 	## prepare data
 	label_split = label_dict[i]
 	[expr_tr, label_tr, expr_te, label_te] = split_expr(expr, label_split)
 	
 	## train the model
-	clf = GaussianProcessClassifier(kernel=1.0 * RBF(length_scale=1.0), 
-									optimizer="fmin_l_bfgs_b")
+	clf = GaussianNB()
 	clf.fit(expr_tr, label_tr)
 
 	#test the model
-	label_predicted = clf.predict(expr_te)
-	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	sys.stdout.write('Gauss process\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
-					(sens, spec, accu, (sens+spec)/2))
+	# print_result("Naive Bayes", clf, expr_te, label_te)
+	print_result2("Naive Bayes", clf, expr_te, label_te)
+
 
 
 
@@ -371,39 +457,36 @@ for i in range(N):
 	clf.fit(expr_tr, label_tr)
 
 	#test the model
-	label_predicted = clf.predict(expr_te)
-	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	sys.stdout.write('kNN\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
-					(sens, spec, accu, (sens+spec)/2))
+	# print_result("kNN", clf, expr_te, label_te)
+	print_result2("kNN", clf, expr_te, label_te)
 
 
 
-	# ## Decision Tree
+	## Decision Tree
 
-	# if cross_valid:
-	# 	## sklearn model selection
-	# 	pass
-	# else:
-	# 	params = {}
+	if cross_valid:
+		## sklearn model selection
+		pass
+	else:
+		params = {}
 
-	# ## prepare data
-	# label_split = label_dict[i]
-	# [expr_tr, label_tr, expr_te, label_te] = split_expr(expr, label_split)
+	## prepare data
+	label_split = label_dict[i]
+	[expr_tr, label_tr, expr_te, label_te] = split_expr(expr, label_split)
 	
-	# ## train the model
-	# clf = DecisionTreeClassifier(max_depth=None)
-	# clf.fit(expr_tr, label_tr)
+	## train the model
+	clf = DecisionTreeClassifier(max_depth=None)
+	clf.fit(expr_tr, label_tr)
 
-	# #test the model
-	# label_predicted = clf.predict(expr_te)
-	# [sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-	# sys.stdout.write('Decision Tree\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
-	# 				(sens, spec, accu, (sens+spec)/2))
+	#test the model
+	# print_result("Decision tree", clf, expr_te, label_te)
+	print_result2("Decision tree", clf, expr_te, label_te)
 
 
 
 ## Dump json data
-with open(dir_proj + '/validation/random_split_indices.json', 'w') as writer:
-	json.dump(label_dict, writer)
+# if not S:
+# 	with open(dir_proj + '/validation/random_split_indices.json', 'w') as writer:
+# 		json.dump(label_dict, writer)
 
 

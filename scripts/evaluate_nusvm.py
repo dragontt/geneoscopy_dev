@@ -3,7 +3,7 @@ import numpy as np
 import json
 import os
 import time
-from scipy.stats import rankdata
+import sys
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
@@ -13,6 +13,9 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB
 
 
 def split_expr(expr, label_split):
@@ -65,11 +68,63 @@ def calculate_confusion_matrix(label_te, label_pred):
 	return [sens, spec, accu]
 
 
+def calculate_poly_detection(label_te, label_pred):
+	pred_pos = np.append(np.where(label_pred == "P")[0], np.where(label_pred == "C")[0])
+	pred_neg = np.where(label_pred == "N")[0]
+	te_pos = np.where(label_te == "P")[0]
+	te_neg = np.where(label_te == "N")[0]
+	tps = len(np.intersect1d(pred_pos, te_pos)) 
+	fps = len(np.intersect1d(pred_pos, te_neg)) 
+	fns = len(np.intersect1d(pred_neg, te_pos))
+	tns = len(np.intersect1d(pred_neg, te_neg))
+	sens = tps/float(len(te_pos))
+	spec = tns/float(len(te_neg))
+	return [sens, spec]
+
+
+def calculate_cancer_detection(label_te, label_pred):
+	pred_pos = np.append(np.where(label_pred == "P")[0], np.where(label_pred == "C")[0])
+	pred_neg = np.where(label_pred == "N")[0]
+	te_pos = np.where(label_te == "C")[0]
+	te_neg = np.where(label_te == "N")[0]
+	tps = len(np.intersect1d(pred_pos, te_pos)) 
+	fps = len(np.intersect1d(pred_pos, te_neg)) 
+	fns = len(np.intersect1d(pred_neg, te_pos))
+	tns = len(np.intersect1d(pred_neg, te_neg))
+	sens = tps/float(len(te_pos))
+	spec = tns/float(len(te_neg))
+	return [sens, spec]
+
+
+def print_result(algo_name, clf, expr_te, label_te):
+	label_predicted = clf.predict(expr_te)
+	[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
+	sys.stdout.write('%s\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
+					(algo_name, sens, spec, accu, (sens+spec)/2))
+
+
+def print_result2(algo_name, clf, expr_te, label_te):
+	label_predicted = clf.predict(expr_te)
+	# [sens, spec] = calculate_poly_detection(label_te, label_predicted)
+	[sens, spec] = calculate_cancer_detection(label_te, label_predicted)
+	sys.stdout.write('%s\t%.3f\t%.3f\t%.3f\t%.3f\n' % 
+					(algo_name, sens, spec, 0, (sens+spec)/2))
+
+
+## Arguments
+N = int(sys.argv[1])
+S = str(sys.argv[2]) ## True to load the N evaluation sets
+S = True if S.lower() == 'true' else False
+if S: 
+	sys.stderr.write("Loading existed json\n")
+else:
+	sys.stderr.write("Generating new json\n")
+
 ## Project directories
 dir_proj = '/Users/KANG/geneoscopy_dev/data/run_proj_batch1-17_3/'
 # file_expr = dir_proj + '/training/training_set.txt'
 file_expr = dir_proj + '/training/training_set_full.txt'
-N = 10
+
 T = 200 #num of top genes
 
 #### Evaluation of machine learning models ####
@@ -83,68 +138,56 @@ labels = expr_full[1:,1]
 
 ## Randomly select N times
 label_keys = ['C', 'P', 'N']
-label_dict = {}
+
+if S:
+	with open(dir_proj + '/validation/random_split_indices.json') as json_reader:
+		label_dict = json.load(json_reader)
+	for k in label_dict.keys(): ## replace the str key with numberic key
+		label_dict[int(k)] = label_dict[k]
+		del label_dict[k]
+else:
+	label_dict = {}
 
 
-hyperparams = [.5, .6, .7, .82, .9]
-eval_metrics = np.zeros((10, len(hyperparams)))
-
+os.system('rm -rf tmp/; mkdir tmp/')
 
 for i in range(N):
-	print '*** Set '+ str(i+1) + ' ***'
+	sys.stdout.write('##### Set '+ str(i+1) + ' #####\n')
+	sys.stderr.write(str(i+1) + ' ')
 
-	## Randomly split
-	label_dict[i] = {'training':{}, 'testing':{}}
-	for k in label_keys:
-		indx = np.where(labels == k)[0]
-		indx_tr = np.random.choice(indx, size=np.floor(len(indx)*.8), replace=False)
-		indx_te = np.setdiff1d(indx, indx_tr)
-		label_dict[i]['training'][k] = list(indx_tr)
-		label_dict[i]['testing'][k] = list(indx_te)
+	if not S:
+		## Randomly split
+		label_dict[i] = {'training':{}, 'testing':{}}
+		for k in label_keys:
+			indx = np.where(labels == k)[0]
+			indx_tr = np.random.choice(indx, size=np.floor(len(indx)*.8), replace=False)
+			indx_te = np.setdiff1d(indx, indx_tr)
+			label_dict[i]['training'][k] = list(indx_tr)
+			label_dict[i]['testing'][k] = list(indx_te)
 
 	## LIMMA wrapper
-	write_valid_chips(label_dict[i]['training'], samples, labels, 'valid_chips_'+str(i)+'.txt')
+	# write_valid_chips(label_dict[i]['training'], samples, labels, 'tmp/valid_chips_'+str(i)+'.txt')
 
-	while not os.path.isfile('valid_chips_'+str(i)+'.txt'):
-		time.sleep(1)
-	print('analyzing DE genes for this set ...')
-	os.system('Rscript ../../../scripts/de_analysis.r ../training/chipdata.txt valid_chips_'+str(i)+'.txt N_vs_P_vs_C 1 0 top_de_genes_'+str(i)+'.txt; cp top_de_genes_'+str(i)+'.txt tmp.txt; head -'+ str(T+1) +' tmp.txt > top_de_genes_'+str(i)+'.txt; rm tmp.txt')
+	# while not os.path.isfile('tmp/valid_chips_'+str(i)+'.txt'):
+	# 	time.sleep(1)
+	# os.system('Rscript ../../../scripts/de_analysis.r ../training/chipdata.txt tmp/valid_chips_'+str(i)+'.txt N_vs_P_vs_C 1 0 tmp/top_de_genes_'+str(i)+'.txt; cp tmp/top_de_genes_'+str(i)+'.txt tmp/tmp.txt; head -'+ str(T+1) +' tmp/tmp.txt > tmp/top_de_genes_'+str(i)+'.txt; rm tmp/tmp.txt')
 
-	while not os.path.isfile('top_de_genes_'+str(i)+'.txt'):
-		time.sleep(5)
-	de_genes = load_de_genes('top_de_genes_'+str(i)+'.txt')
+	# while not os.path.isfile('tmp/top_de_genes_'+str(i)+'.txt'):
+	# 	time.sleep(1)
+	# de_genes = load_de_genes('tmp/top_de_genes_'+str(i)+'.txt')
+	de_genes = load_de_genes('../training/top_de_genes.txt')
 	expr = filter_features(expr_full, de_genes)
 
 
+	
+
 	## Nu-SVM
-	for j in range(len(hyperparams)):
-		p = hyperparams[j]
-
-		if cross_valid:
-			## sklearn model selection
-			from sklearn.model_selection import GridSearchCV
-			svm = NuSVC()
-			
-			# hyperparams = {'nu': [.5, 1., 1.5, 2., 3,4,5,8,10],
-			# 				'kernel':['rbf'],
-			# 				# 'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
-			# 				'class_weight': [None]}
-			# clf = GridSearchCV(svm, hyperparams, cv=parsed.cross_valid, n_jobs=4)
-
-			from sklearn.model_selection import RandomizedSearchCV
-			import scipy.stats as ss
-			hyperparams = {'nu': ss.expon(scale=10), #randomized parameters
-							'kernel':['rbf'],
-							# 'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
-							'class_weight': [None]}
-			clf = RandomizedSearchCV(nusvm, hyperparams, n_iter=500, cv=parsed.cross_valid, n_jobs=4)
-			
-			clf.fit(expr_tr, label_tr)
-			params = parse_cv_result(clf)
-		else:
-			params = {'nu': p,
-						'kernel': 'rbf',
-						'class_weight': 'balanced'}
+	# nu_arr = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
+	nu_arr = [.76, .78, .8, .82, .84, .86, .88, .9, .92]
+	for nu in nu_arr:
+		params = {'nu': nu,
+					'kernel': 'rbf',
+					'class_weight': 'balanced'}
 
 		## prepare data
 		label_split = label_dict[i]
@@ -159,24 +202,15 @@ for i in range(N):
 		clf.fit(expr_tr, label_tr)
 
 		## test the model
-		label_predicted = clf.predict(expr_te)
-		[sens, spec, accu] = calculate_confusion_matrix(label_te, label_predicted)
-		print 'Nu-SVM\t', p,'\t', sens, spec, accu
+		print_result('nu='+str(nu), clf, expr_te, label_te)
+		# print_result2('nu='+str(nu), clf, expr_te, label_te)
 
+sys.stderr.write('\n')
 
-		eval_metrics[i, j] = accu
-
-print ""
-rankings = []
-for i in range(eval_metrics.shape[0]):
-	rankings.append( np.ones(len(hyperparams))*(len(hyperparams)+1) - rankdata(eval_metrics[i,:], method='max') )
-rankings = np.array(rankings)
-print rankings
-print ""
-print np.mean(rankings, axis=0)
 
 ## Dump json data
-with open(dir_proj + '/validation/random_split_indices.json', 'w') as writer:
-	json.dump(label_dict, writer)
+# if not S:
+# 	with open(dir_proj + '/validation/random_split_indices.json', 'w') as writer:
+# 		json.dump(label_dict, writer)
 
 

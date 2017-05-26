@@ -27,20 +27,21 @@ echo ""
 
 
 echo "Preparing normalized data ..."
-python ${DIR_SCRIPTS}/prepare_normalized_expr_data.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o1 ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -o2 ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
+# python ${DIR_SCRIPTS}/prepare_normalized_expr_data.py -i $NORMALIZED_CHIPDATA_FULL -l $GENE_FILTER_LST -c 2 -o1 ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -o2 ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt
+
 #### Use full list of probesets
 # cp ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt
 ####
 
 echo "Splitting training/testing sets ... "
-mkdir -p ${DIR_DATA}/training
-mkdir -p ${DIR_DATA}/testing
-python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
-python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
+# mkdir -p ${DIR_DATA}/training
+# mkdir -p ${DIR_DATA}/testing
+# python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips.txt -tr0 ${DIR_DATA}/training/chipdata.txt -tr1 ${DIR_DATA}/training/valid_chips.txt -te0 ${DIR_DATA}/testing/chipdata.txt -te1 ${DIR_DATA}/testing/valid_chips.txt
+# python ${DIR_SCRIPTS}/split_expr_train_vs_test.py -v $VALID_CHIPS -i ${DIR_DATA}/chipdata_geneset_x_valid_chips_full.txt -tr0 ${DIR_DATA}/training/chipdata_full.txt -te0 ${DIR_DATA}/testing/chipdata_full.txt
 
 
-echo "Analyzing DE genes ... "
-Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
+# echo "Analyzing DE genes ... "
+# Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
 
 # python ${DIR_SCRIPTS}/combine_de_genes.py ${DIR_DATA}/training/top_de_genes.constrained_gene_set.txt ${DIR_DATA}/training/top_de_genes.all_gene_symbol.txt 0.0234 0.0004 ${DIR_DATA}/training/top_de_genes.txt
 # wc -l ${DIR_DATA}/training/top_de_genes.txt
@@ -61,7 +62,7 @@ Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DAT
 # Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.c_vs_n.txt N_vs_C 1 0 ${DIR_DATA}/training/top_de_genes.c_vs_n.txt
 
 
-NUM_TOP_GENES_LIST=( 50 100 150 200 250 300 )
+NUM_TOP_GENES_LIST=( 200 )
 for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 	echo "#################################"
 	echo "top genes -->" $NUM_TOP_GENES
@@ -74,14 +75,14 @@ for NUM_TOP_GENES in "${NUM_TOP_GENES_LIST[@]}"; do
 
 
 	echo "Analyzing DE genes ... "
-	Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
-	cp ${DIR_DATA}/training/top_de_genes.txt ${DIR_DATA}/training/tmp.txt
-	head -$((NUM_TOP_GENES+1)) ${DIR_DATA}/training/tmp.txt > ${DIR_DATA}/training/top_de_genes.txt
-	rm ${DIR_DATA}/training/tmp.txt
+	# Rscript ${DIR_SCRIPTS}/de_analysis.r ${DIR_DATA}/training/chipdata.txt ${DIR_DATA}/training/valid_chips.txt $GROUP 1 0 ${DIR_DATA}/training/top_de_genes.txt
+	# cp ${DIR_DATA}/training/top_de_genes.txt ${DIR_DATA}/training/tmp.txt
+	# head -$((NUM_TOP_GENES+1)) ${DIR_DATA}/training/tmp.txt > ${DIR_DATA}/training/top_de_genes.txt
+	# rm ${DIR_DATA}/training/tmp.txt
 
 
 	# ML_MODELS=(random_forest svm grad_boosting adaboost gauss_process)
-	ML_MODELS=( svm )
+	ML_MODELS=( nu_svm )
 	for ML_MODEL in "${ML_MODELS[@]}"; do
 		echo "###" $ML_MODEL "###"
 		

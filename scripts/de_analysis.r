@@ -26,12 +26,12 @@ design <- model.matrix(~0+factor(labels))
 
 if (group == "N_vs_C") {
 	# Two group analysis
-	cat("   group", group, "\n")
+	# cat("   group", group, "\n")
 	colnames(design) <- c("Normal", "Cancer")
 	contrast.matrix <- makeContrasts(CvsN=Cancer-Normal, levels=design)
 } else if (group == "N_vs_P_vs_C") {
 	# Three group analysis
-	cat("   group", group, "\n")
+	# cat("   group", group, "\n")
 	colnames(design) <- c("Normal", "Polyp", "Cancer")
 	contrast.matrix <- makeContrasts(CvsN=Cancer-Normal, CvsP=Cancer-Polyp, PvsN=Polyp-Normal, levels=design)
 }
